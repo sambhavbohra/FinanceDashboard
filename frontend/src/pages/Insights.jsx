@@ -64,7 +64,7 @@ export default function Insights() {
               <Bot size={32} className="text-primary" strokeWidth={3} />
            </div>
            <div>
-              <h1 className="text-4xl font-black text-white tracking-tighter italic">FIN<span className="text-accent">INSIGHTS</span></h1>
+              <h1 className="text-4xl font-black text-white tracking-tighter italic">Fin<span className="text-accent underline">Insights</span></h1>
               <p className="text-muted text-[10px] uppercase font-black tracking-[0.4em] opacity-60">Neural Financial Co-Pilot Active</p>
            </div>
         </div>
@@ -106,8 +106,8 @@ export default function Insights() {
         </div>
         <div className="text-center md:text-left">
            <p className="text-accent text-[10px] font-black uppercase tracking-[0.3em] mb-2">Stability Verdict</p>
-           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter mb-3 leading-tight uppercase">
-             {healthScore >= 70 ? 'Operational Efficiency: High' : healthScore >= 50 ? 'Steady: Optimization Required' : 'Critical: Resource Depletion Warning'}
+           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter mb-3 leading-tight ">
+             {healthScore >= 70 ? 'Operational Efficiency: High' : healthScore >= 50 ? 'Steady: Optimization Required' : 'CRITICAL: Resource Depletion Warning'}
            </h2>
            <p className="text-muted text-sm font-medium leading-relaxed max-w-lg">
              {healthScore >= 70 ? 'Capital flow is optimized. Continue current expenditure pattern for maximum goal efficiency.' : 'Resource allocation is balanced but velocity is slowing down. Minor adjustments recommended.'}

@@ -53,13 +53,18 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const login = async (googleToken) => {
+    console.log("Attempting Google Login to:", `${API_URL}/auth/google`);
     try {
       const res = await axios.post(`${API_URL}/auth/google`, { token: googleToken });
+      console.log("Login success, received token");
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
       fetchData();
     } catch (error) {
-      console.error("Google Login failed", error);
+      console.error("Google Login Network Error:", error);
+      if (error.response) {
+        console.error("Server Responded With:", error.response.status, error.response.data);
+      }
     }
   };
 

@@ -227,7 +227,7 @@ export const FinanceProvider = ({ children }) => {
   
   // Health Score Calculation
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
-  const healthScore = Math.min(100, Math.max(0, Math.round(50 + (savingsRate * 1.5))));
+  const healthScore = totalIncome > 0 ? Math.min(100, Math.max(0, Math.round(50 + (savingsRate * 1.5)))) : null;
 
   return (
     <FinanceContext.Provider value={{

@@ -38,8 +38,7 @@ export default function OverviewCards() {
     },
     {
       title: 'Health Score',
-      // If healthScore is 0 or null, show Not checked yet as requested
-      amount: healthScore > 0 ? `${healthScore}/100` : 'Not checked yet',
+      amount: healthScore !== null ? `${healthScore}/100` : 'N/A',
       icon: Target,
       color: 'text-blue-400',
       bgColor: 'bg-blue-400/10',

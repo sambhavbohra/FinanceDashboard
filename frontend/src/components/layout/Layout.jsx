@@ -34,7 +34,7 @@ export default function Layout({ children }) {
                  <Wallet size={32} strokeWidth={3} className="text-primary relative z-10" />
               </div>
               <div>
-                 <h1 className="text-2xl font-black tracking-tighter leading-none text-white italic">FIN<span className="text-accent underline-offset-4 underline decoration-2">TRACK</span></h1>
+                 <h1 className="text-2xl font-black tracking-tighter leading-none text-white italic">Fin<span className="text-accent underline-offset-4 underline decoration-2">Track</span></h1>
                  <p className="text-[10px] text-muted font-black uppercase tracking-[0.4em] mt-1.5 opacity-60">Smart Capital</p>
               </div>
            </div>

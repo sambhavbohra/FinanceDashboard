@@ -9,7 +9,7 @@ import { Plus, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { user, transactions, goals } = useFinance();
+  const { user, transactions, goals, healthScore } = useFinance();
   const [showModal, setShowModal] = useState(false);
 
   const getTimeGreeting = () => {
@@ -19,14 +19,7 @@ export default function Dashboard() {
     return 'Good Evening';
   };
 
-  const calculateHealthScore = () => {
-     if (!goals || goals.length === 0) return 85; 
-     const completed = goals.reduce((acc, g) => acc + (g.currentAmount / g.targetAmount), 0);
-     const avg = Math.min(Math.round((completed / goals.length) * 100) + 20, 100);
-     return avg;
-  };
-
-  const score = calculateHealthScore();
+  const score = healthScore;
   const hasData = transactions.length > 0;
 
   return (
@@ -38,7 +31,7 @@ export default function Dashboard() {
             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           </h1>
           <p className="text-muted text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">
-            Financial Health Score: {score}/100
+            Financial Health Score: {transactions.length > 0 ? `${score}/100` : 'N/A'}
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import { User, Mail, Shield, LogOut, ChevronRight, Phone, CheckCircle, Edit, X, 
 import axios from 'axios';
 import PhoneInputPkg from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 const PhoneInput = PhoneInputPkg.default || PhoneInputPkg;

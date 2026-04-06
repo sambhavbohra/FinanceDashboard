@@ -13,6 +13,7 @@ const UserSchema = new mongoose.Schema({
   otpExpires: { type: Date },
   phoneVerified: { type: Boolean, default: false },
   isTest: { type: Boolean, default: false },
+  aiPersona: { type: String, enum: ['strict', 'gentle', 'coach'], default: 'coach' },
   createdAt: { type: Date, default: Date.now }
 });
 

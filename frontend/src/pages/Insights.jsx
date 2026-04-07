@@ -13,19 +13,17 @@ export default function Insights() {
 
   const hasData = transactions.length > 0;
 
-  const [expandedInsight, setExpandedInsight] = useState(null);
-
   const fetchInsights = async () => {
     if (!hasData) return;
     try {
       setLoading(true);
-      setError('');
+      // Clear previous state if needed (optional)
       // In a real app, we'd fetch friendBalances and pastInsights from context/backend
       const data = await generateFinancialInsights(transactions, totalIncome, totalExpenses, goals, [], [], user?.aiPersona || 'coach');
       setLiveInsights(data);
     } catch (err) {
       console.error(err);
-      addToast('Could not generate insights. Please check your API key in the .env file.', 'error');
+      addToast('Neural Link Busy. Could not sync with AI core. Please retry in a few moments.', 'error');
     } finally {
       setLoading(false);
     }
@@ -143,7 +141,7 @@ export default function Insights() {
             ) : (
               liveInsights.map((insight, idx) => (
                 <motion.div key={insight.id || idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}
-                  className={`group glass-card p-0 overflow-hidden border-2 transition-all duration-300 ${expandedInsight === idx ? 'border-accent shadow-[0_30px_60px_-15px_rgba(226,254,116,0.1)]' : 'border-white/5 hover:border-white/10'}`}
+                  className="group glass-card p-0 overflow-hidden border-2 border-white/5 hover:border-white/10 transition-all duration-300"
                 >
                   <div className="p-8 flex items-start gap-6">
                     <div className={`mt-1 p-3 rounded-2xl shrink-0 ${getTheme(insight.type).split(' ').slice(0,2).join(' ')}`}>
@@ -152,46 +150,12 @@ export default function Insights() {
                     <div className="flex-1 min-w-0">
                        <div className="flex justify-between items-start mb-2">
                           <p className={`text-[10px] font-black uppercase tracking-widest ${getTheme(insight.type).split(' ').pop()}`}>{insight.type}</p>
-                          <span className="text-[10px] text-white/20 font-black">AI_REF: {insight.id?.split('-')[1] || idx}</span>
                        </div>
-                       <h4 className="text-xl font-black text-white tracking-tighter mb-4 leading-tight">
+                       <h4 className="text-xl font-black text-white tracking-tighter leading-tight">
                          {insight.message}
                        </h4>
-                       
-                       <div className="flex flex-wrap items-center gap-4">
-                          {insight.actionLabel && (
-                             <button className="px-6 py-3 bg-white/5 hover:bg-accent hover:text-primary rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/5">
-                                {insight.actionLabel}
-                             </button>
-                          )}
-                          <button onClick={() => setExpandedInsight(expandedInsight === idx ? null : idx)}
-                            className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-accent transition-colors">
-                             {expandedInsight === idx ? 'Close Reasoning [-]' : 'View Logic [+]'}
-                          </button>
-                       </div>
                     </div>
                   </div>
-                  
-                  {expandedInsight === idx && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="px-8 pb-8 border-t border-white/5 bg-white/1">
-                       <div className="pt-6 space-y-4">
-                          <div className="flex items-center gap-3">
-                             <Bot size={14} className="text-accent" />
-                             <p className="text-[9px] font-black uppercase tracking-widest text-accent">Internal AI Model Chain</p>
-                          </div>
-                          <p className="text-xs text-muted leading-relaxed font-medium italic">
-                             "Based on the transaction density of the last 72 hours, I've identified a {insight.type === 'warning' ? 'negative velocity trend' : 'positive resource consolidation'}. This recommendation aims to {insight.type === 'warning' ? 'prevent a budget breach' : 'maximize the interest-free capital window'} while maintaining a 20% safety margin."
-                          </p>
-                          <div className="p-4 bg-black/40 rounded-xl border border-white/5">
-                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Conversational Follow-up</p>
-                             <div className="flex gap-2">
-                                <input placeholder="Tell me more..." className="flex-1 bg-transparent text-xs text-white outline-none" />
-                                <button className="text-accent hover:scale-110 transition-transform"><RefreshCw size={14} /></button>
-                             </div>
-                          </div>
-                       </div>
-                    </motion.div>
-                  )}
                 </motion.div>
               ))
             )}

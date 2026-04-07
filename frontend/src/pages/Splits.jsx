@@ -85,8 +85,8 @@ export default function Splits() {
 
   const handleDeleteGroup = async () => {
     const isConfirmed = await confirm({
-      title: "Delete Group?",
-      message: "Permanently delete this group and all its splits? This action cannot be undone.",
+      title: "Protocol: Terminate Group?",
+      message: "This will permanently dissolve the communal ledger and remove access for all squad members. This action is irreversible. Proceed?",
       type: "danger"
     });
 
@@ -96,10 +96,10 @@ export default function Splits() {
           setGroups(prev => prev.filter(g => g._id !== selectedGroup._id));
           setSelectedGroup(null);
           setShowManagement(false);
-          addToast("Group deleted successfully", "success");
+          addToast("Communal ledger dissolved successfully", "success");
        } catch (err) { 
-         console.error(err); 
-         addToast("Failed to delete group", "error");
+          console.error(err); 
+          addToast("Failed to dissolve the communal protocol", "error");
        }
     }
   };
@@ -136,29 +136,35 @@ export default function Splits() {
 
   const handleDeleteExpense = async (expenseId) => {
     const isConfirmed = await confirm({
-      title: "Delete Split?",
-      message: "Are you sure you want to delete this track record?",
+      title: "Request Split Removal?",
+      message: "Communal modifications require squad-wide consensus. A revision request will be broadcast to all human members for approval. Initiate protocol?",
       type: "danger"
     });
 
     if (isConfirmed) {
        try {
-          await axios.delete(`${API_URL}/groups/${selectedGroup._id}/expenses/${expenseId}`);
+          const res = await axios.delete(`${API_URL}/groups/${selectedGroup._id}/expenses/${expenseId}`);
+          
+          if (res.data.consensusRequired) {
+             addToast("Removal request broadcast to squad", "success");
+          } else {
+             addToast("Split record removed from ledger", "success");
+          }
+          
           await globalFetchData();
           fetchGroupExpenses(selectedGroup._id);
           fetchBalances();
-          addToast("Split record removed", "success");
        } catch (e) {
           console.error(e);
-          addToast("Failed to delete the split record", "error");
+          addToast("Failed to initiate removal protocol", "error");
        }
     }
   };
 
   const removeMember = async (targetUserId) => {
      const isConfirmed = await confirm({
-       title: "Remove Member?",
-       message: "Are you sure you want to remove this member from the group?",
+       title: "Squad Dismissal?",
+       message: "This will terminate the member's access to the shared ledger and freeze their pending splits. Proceed?",
        type: "danger"
      });
      if (!isConfirmed) return;
@@ -166,10 +172,10 @@ export default function Splits() {
         const res = await axios.delete(`${API_URL}/groups/${selectedGroup._id}/members/${targetUserId}`);
         setSelectedGroup(res.data);
         setGroups(prev => prev.map(g => g._id === res.data._id ? res.data : g));
-        addToast("Member removed", "success");
+        addToast("Member dismissed from squad", "success");
      } catch (e) { 
         console.error(e); 
-        addToast("Failed to remove member", "error");
+        addToast("Failed to execute dismissal protocol", "error");
      }
   };
 

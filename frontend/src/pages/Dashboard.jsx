@@ -43,22 +43,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 pb-20 md:pb-0">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <div className="flex flex-col gap-0.5">
-          <h1 className="text-3xl font-black text-white italic tracking-tight uppercase flex items-center gap-2">
-            {getTimeGreeting()}, {user?.name || 'User'}!
+          <h1 className="text-2xl sm:text-3xl font-black text-white italic tracking-tighter uppercase flex items-center gap-2">
+            {getTimeGreeting()}, {user?.name?.split(' ')[0] || 'User'}!
             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           </h1>
-          <p className="text-muted text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">
-            Financial Health Score: {transactions.length > 0 ? `${score}/100` : 'N/A'}
+          <p className="text-muted text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">
+            Capital Health Score: {transactions.length > 0 ? `${score}/100` : 'N/A'}
           </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-3 bg-accent text-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-accent/90 transition-all shadow-xl shadow-accent/10 active:scale-95 group shrink-0"
+          className="flex items-center gap-3 bg-accent text-primary px-7 py-3.5 sm:px-10 sm:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] sm:text-xs hover:bg-accent/90 transition-all shadow-xl shadow-accent/10 active:scale-95 group shrink-0"
         >
-          Post Entry <Plus size={20} strokeWidth={4} />
+          Post Entry <Plus size={18} strokeWidth={4} />
         </button>
       </header>
 

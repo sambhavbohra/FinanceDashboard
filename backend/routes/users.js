@@ -36,9 +36,10 @@ router.get('/search', async (req, res) => {
       _id: { $ne: req.user.userId },
       $or: [
         { username: { $regex: q, $options: 'i' } },
-        { name: { $regex: q, $options: 'i' } }
+        { name: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } }
       ]
-    }).select('name username picture email').limit(10);
+    }).select('name username picture email phone').limit(10);
 
     res.json(users);
   } catch (err) {

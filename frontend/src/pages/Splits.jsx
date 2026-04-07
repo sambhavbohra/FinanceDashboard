@@ -5,6 +5,8 @@ import { Plus, Users, ArrowLeft, FileText, CheckCircle, ChevronRight, Inbox, Cop
 import axios from 'axios';
 import CreateGroupModal from '../components/splits/CreateGroupModal';
 import AddExpenseModal from '../components/splits/AddExpenseModal';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -13,6 +15,8 @@ const formatCurrency = (n) =>
 
 export default function Splits() {
   const { user, fetchData: globalFetchData, editGroup } = useFinance();
+  const { confirm } = useConfirm();
+  const { addToast } = useToast();
   const [groups, setGroups] = useState([]);
   const [balances, setBalances] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -28,7 +32,6 @@ export default function Splits() {
   const [editGroupEmoji, setEditGroupEmoji] = useState('');
   const [testFriendName, setTestFriendName] = useState('');
   const [addingTestFriend, setAddingTestFriend] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchGroups();
@@ -77,13 +80,23 @@ export default function Splits() {
   };
 
   const handleDeleteGroup = async () => {
-    if (window.confirm("Permanently delete this group and all its splits?")) {
+    const isConfirmed = await confirm({
+      title: "Delete Group?",
+      message: "Permanently delete this group and all its splits? This action cannot be undone.",
+      type: "danger"
+    });
+
+    if (isConfirmed) {
        try {
           await axios.delete(`${API_URL}/groups/${selectedGroup._id}`);
           setGroups(prev => prev.filter(g => g._id !== selectedGroup._id));
           setSelectedGroup(null);
           setShowManagement(false);
-       } catch (err) { console.error(err); }
+          addToast("Group deleted successfully", "success");
+       } catch (err) { 
+         console.error(err); 
+         addToast("Failed to delete group", "error");
+       }
     }
   };
 
@@ -109,36 +122,51 @@ export default function Splits() {
       await globalFetchData();
       fetchGroupExpenses(selectedGroup._id);
       fetchBalances();
+      addToast("Split marked as settled", "success");
     } catch (e) {
       console.error(e);
-      setError(e.response?.data?.message || 'Failed to settle');
-      setTimeout(() => setError(''), 4000);
+      addToast(e.response?.data?.message || 'Failed to settle', "error");
     }
     setSettling(null);
   };
 
   const handleDeleteExpense = async (expenseId) => {
-    if (window.confirm("Are you sure you want to delete this split?")) {
+    const isConfirmed = await confirm({
+      title: "Delete Split?",
+      message: "Are you sure you want to delete this track record?",
+      type: "danger"
+    });
+
+    if (isConfirmed) {
        try {
           await axios.delete(`${API_URL}/groups/${selectedGroup._id}/expenses/${expenseId}`);
           await globalFetchData();
           fetchGroupExpenses(selectedGroup._id);
           fetchBalances();
+          addToast("Split record removed", "success");
        } catch (e) {
           console.error(e);
-          setError("Failed to delete the split.");
-          setTimeout(() => setError(''), 4000);
+          addToast("Failed to delete the split record", "error");
        }
     }
   };
 
   const removeMember = async (targetUserId) => {
-     if (!window.confirm('Are you sure?')) return;
+     const isConfirmed = await confirm({
+       title: "Remove Member?",
+       message: "Are you sure you want to remove this member from the group?",
+       type: "danger"
+     });
+     if (!isConfirmed) return;
      try {
         const res = await axios.delete(`${API_URL}/groups/${selectedGroup._id}/members/${targetUserId}`);
         setSelectedGroup(res.data);
         setGroups(prev => prev.map(g => g._id === res.data._id ? res.data : g));
-     } catch (e) { console.error(e); }
+        addToast("Member removed", "success");
+     } catch (e) { 
+        console.error(e); 
+        addToast("Failed to remove member", "error");
+     }
   };
 
   const copyInviteLink = () => {
@@ -146,6 +174,7 @@ export default function Splits() {
      const link = `${window.location.origin}/join/${selectedGroup.inviteToken}`;
      navigator.clipboard.writeText(link);
      setCopying(true);
+     addToast("Invite link copied to clipboard!", "success");
      setTimeout(() => setCopying(false), 2000);
   };
 
@@ -227,10 +256,18 @@ export default function Splits() {
                     </div>
                     {isCreatorOfGroup(group) && (
                       <button 
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (window.confirm('Delete this group and all its records?')) {
-                            axios.delete(`${API_URL}/groups/${group._id}`).then(() => fetchGroups());
+                          const isConfirmed = await confirm({
+                             title: "Delete Group?",
+                             message: "Are you sure you want to delete this group and all its records?",
+                             type: "danger"
+                          });
+                          if (isConfirmed) {
+                            axios.delete(`${API_URL}/groups/${group._id}`).then(() => {
+                               fetchGroups();
+                               addToast("Group deleted", "success");
+                            });
                           }
                         }}
                         className="p-3 bg-red-400/10 text-red-400 rounded-xl hover:bg-red-400 transition-all group-hover:scale-110 active:scale-95"
@@ -251,10 +288,16 @@ export default function Splits() {
                       <h3 className="text-white font-black text-lg">Manage Group</h3>
                       <button 
                         onClick={async () => {
-                           if (window.confirm('PERMANENTLY DELETE THIS GROUP? All data will be lost.')) {
+                           const isConfirmed = await confirm({
+                              title: "Purge Group?",
+                              message: "PERMANENTLY DELETE THIS GROUP? All data will be lost.",
+                              type: "danger"
+                           });
+                           if (isConfirmed) {
                               await axios.delete(`${API_URL}/groups/${selectedGroup._id}`);
                               setSelectedGroup(null);
                               fetchGroups();
+                              addToast("Group purged", "success");
                            }
                         }}
                         className="px-4 py-2 bg-red-400 text-primary font-black uppercase text-[10px] rounded-xl hover:scale-105 transition-all shadow-xl shadow-red-400/20"
@@ -323,11 +366,6 @@ export default function Splits() {
               </button>
             </div>
 
-            {error && (
-               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-black rounded-2xl text-center mb-4">
-                  {error}
-               </motion.div>
-            )}
 
             {/* Expense List */}
             <div className="space-y-4">

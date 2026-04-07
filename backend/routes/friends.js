@@ -54,7 +54,11 @@ router.post('/request/:userId', async (req, res) => {
       if (existing.status === 'pending') return res.status(400).json({ message: 'Request already sent' });
     }
 
-    const friendship = await Friendship.create({ requester: myId(req), recipient: targetId });
+    const friendship = await Friendship.create({ 
+      requester: myId(req), 
+      recipient: targetId,
+      status: 'accepted' // Auto-accept all requests for frictionless splits
+    });
     const populated = await friendship.populate('requester recipient', 'name username picture');
     res.json(populated);
   } catch (err) {

@@ -35,10 +35,11 @@ const calculateGroupBalances = async (userId) => {
 // Create group (already handles private friends via unique names)
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, members, isPrivate, emoji } = req.body;
+    const { name, members, memberIds, isPrivate, emoji } = req.body;
+    const allMembers = [...new Set([...(members || memberIds || []), req.user.userId])];
     const group = new Group({
       name,
-      members: [...new Set([...members, req.user.userId])], // Ensure unique members
+      members: allMembers, // Ensure unique members
       createdBy: req.user.userId,
       isPrivate,
       emoji: emoji || '📁'
@@ -150,6 +151,15 @@ router.post('/:id/expenses', auth, async (req, res) => {
     const populated = await GroupExpense.findById(expense._id).populate('payers.user splits.user');
     res.status(201).json(populated);
   } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Get Single Group
+router.get('/:id', auth, async (req, res) => {
+   try {
+      const group = await Group.findById(req.params.id).populate('members createdBy');
+      if (!group) return res.status(404).json({ message: 'Group not found' });
+      res.json(group);
+   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // Get Group Expenses

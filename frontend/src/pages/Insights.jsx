@@ -3,12 +3,13 @@ import { useFinance } from '../context/FinanceContext';
 import { motion } from 'framer-motion';
 import { BrainCircuit, AlertTriangle, Lightbulb, CheckCircle2, Bot, RefreshCw, Inbox } from 'lucide-react';
 import { generateFinancialInsights } from '../services/ai';
+import { useToast } from '../context/ToastContext';
 
 export default function Insights() {
-  const { transactions, totalIncome, totalExpenses, goals, healthScore } = useFinance();
+  const { transactions, totalIncome, totalExpenses, goals, healthScore, user } = useFinance();
+  const { addToast } = useToast();
   const [liveInsights, setLiveInsights] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const hasData = transactions.length > 0;
 
@@ -24,7 +25,7 @@ export default function Insights() {
       setLiveInsights(data);
     } catch (err) {
       console.error(err);
-      setError('Could not generate insights. Please check your API key in the .env file.');
+      addToast('Could not generate insights. Please check your API key in the .env file.', 'error');
     } finally {
       setLoading(false);
     }

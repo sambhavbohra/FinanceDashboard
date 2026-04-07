@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { motion } from 'framer-motion';
-import { Target, TrendingUp, Plus, Inbox, Trash2 } from 'lucide-react';
+import { Target, TrendingUp, Plus, Trash2 } from 'lucide-react';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 import AddGoalModal from '../components/dashboard/AddGoalModal';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
 export default function Goals() {
   const { goals, totalIncome, totalExpenses, addFundsToGoal, deleteGoal } = useFinance();
+  const { confirm } = useConfirm();
+  const { addToast } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [fundingGoal, setFundingGoal] = useState(null);
   const [fundAmount, setFundAmount] = useState('');
   const [fundingLoading, setFundingLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleAddFunds = async (e) => {
     e.preventDefault();
@@ -24,18 +24,25 @@ export default function Goals() {
     setFundingLoading(true);
     const success = await addFundsToGoal(fundingGoal._id || fundingGoal.id, fundAmount);
     if (success) {
+      addToast(`Successfully added ₹${fundAmount} to ${fundingGoal.name}`, "success");
       setFundingGoal(null);
       setFundAmount('');
-      setError('');
     } else {
-      setError("Failed to add funds. Please try again.");
+      addToast("Failed to add funds. Please try again.", "error");
     }
     setFundingLoading(false);
   };
 
   const handleDeleteGoal = async (id) => {
-    if (window.confirm("Permanently delete this savings goal?")) {
+    const isConfirmed = await confirm({
+      title: "Delete Goal?",
+      message: "Permanently delete this savings goal? This cannot be undone.",
+      type: "danger"
+    });
+
+    if (isConfirmed) {
       await deleteGoal(id);
+      addToast("Savings goal deleted successfully", "success");
     }
   };
 

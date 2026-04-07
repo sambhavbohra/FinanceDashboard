@@ -57,11 +57,18 @@ const AppContent = () => (
   </BrowserRouter>
 );
 
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
+
 function App() {
   return (
-    <FinanceProvider>
-      <AppContent />
-    </FinanceProvider>
+    <ToastProvider>
+      <ConfirmProvider>
+        <FinanceProvider>
+          <AppContent />
+        </FinanceProvider>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }
 

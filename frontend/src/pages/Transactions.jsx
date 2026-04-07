@@ -3,6 +3,8 @@ import { useFinance } from '../context/FinanceContext';
 import { motion } from 'framer-motion';
 import AddTransactionModal from '../components/dashboard/AddTransactionModal';
 import { ShoppingBag, Coffee, Car, GraduationCap, Link2, DollarSign, Plus, Inbox, Trash2, Edit } from 'lucide-react';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -23,6 +25,8 @@ const formatCurrency = (amount) =>
 
 export default function Transactions() {
   const { transactions, deleteTransaction } = useFinance();
+  const { confirm } = useConfirm();
+  const { addToast } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [editingTx, setEditingTx] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -34,8 +38,16 @@ export default function Transactions() {
   const totalBalance = totalIncome - totalExpense;
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this track record?')) return;
-    await deleteTransaction(id);
+    const isConfirmed = await confirm({
+       title: "Delete Record?",
+       message: "Are you sure you want to delete this track record?",
+       type: "danger"
+    });
+
+    if (isConfirmed) {
+      await deleteTransaction(id);
+      addToast("Transaction deleted successfully", "success");
+    }
   };
 
   const handleEdit = (tx) => {

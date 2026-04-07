@@ -5,6 +5,8 @@ import { Users, Search, UserPlus, Clock, CheckCircle, ChevronRight, ArrowRight, 
 import axios from 'axios';
 import UserSearch from '../components/splits/UserSearch';
 import AddExpenseModal from '../components/splits/AddExpenseModal';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -20,13 +22,14 @@ const TrendingDownCustom = ({ size, className, rotate = 0 }) => (
 
 function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 0 }) {
    const { fetchData: globalFetchData } = useFinance();
+   const { confirm } = useConfirm();
+   const { addToast } = useToast();
    const [group, setGroup] = useState(null);
    const [expenses, setExpenses] = useState([]);
    const [loading, setLoading] = useState(true);
    const [showAddSplit, setShowAddSplit] = useState(false);
    const [editingExpense, setEditingExpense] = useState(null);
    const [settling, setSettling] = useState(false);
-   const [settleMsg, setSettleMsg] = useState('');
 
    useEffect(() => {
       if (isOpen && friend) {
@@ -52,38 +55,43 @@ function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 
 
    const handleSettle = async () => {
       if (settling) return;
-      setSettleMsg('');
       setSettling(true);
       try {
          const res = await axios.post(`${API_URL}/groups/settle-with/${friend._id}`);
          const { meOwed = 0, otherOwed = 0, netDelta = 0 } = res.data;
-         await globalFetchData(); // Refresh global transactions for dashboard
+         await globalFetchData();
          await fetchDetails();
          onUpdate();
          if (netDelta === 0 && meOwed === 0 && otherOwed === 0) {
-            setSettleMsg('Already settled up! No pending amounts.');
+            addToast('Already settled up! No pending amounts.', 'info');
          } else {
-            setSettleMsg(`✓ Settled! ${netDelta > 0 ? `Received ₹${Math.abs(netDelta).toLocaleString()}` : `Paid ₹${Math.abs(netDelta).toLocaleString()}`}`);
+            addToast(`✓ Settled! ${netDelta > 0 ? `Received ₹${Math.abs(netDelta).toLocaleString()}` : `Paid ₹${Math.abs(netDelta).toLocaleString()}`}`, 'success');
+            onClose();
          }
-         setTimeout(() => { setSettleMsg(''); onClose(); }, 1800);
       } catch (e) {
          console.error(e);
-         setSettleMsg('Settlement failed. Please try again.');
+         addToast('Settlement failed. Please try again.', 'error');
       }
       setSettling(false);
    };
 
    const handleDeleteExpense = async (expenseId) => {
-      if (window.confirm("Are you sure you want to delete this split?")) {
+      const isConfirmed = await confirm({
+         title: "Delete Split?",
+         message: "Are you sure you want to delete this split record?",
+         type: "danger"
+      });
+
+      if (isConfirmed) {
          try {
             await axios.delete(`${API_URL}/groups/${group._id}/expenses/${expenseId}`);
             await globalFetchData();
             await fetchDetails();
             onUpdate();
+            addToast("Split record removed", "success");
          } catch (e) {
             console.error(e);
-            setSettleMsg("Failed to delete the split.");
-            setTimeout(() => setSettleMsg(''), 4000);
+            addToast("Failed to delete the split.", "error");
          }
       }
    };
@@ -147,9 +155,15 @@ function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 
                     </button>
                     <button 
                        onClick={async () => {
-                          if (window.confirm('Delete all split records with this friend? This cannot be undone.')) {
+                          const isConfirmed = await confirm({
+                             title: "Reset Ledger?",
+                             message: "Delete all split records with this friend? This cannot be undone.",
+                             type: "danger"
+                          });
+                          if (isConfirmed) {
                              await axios.delete(`${API_URL}/groups/${group._id}`);
                              onUpdate();
+                             addToast("Ledger reset successfully", "success");
                              onClose();
                           }
                        }}
@@ -158,14 +172,6 @@ function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 
                        Reset <span className="hidden sm:inline">Ledger</span> <Trash2 size={16} />
                     </button>
                  </div>
-                {settleMsg && (
-                   <div className={`text-center text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-2xl ${
-                      settleMsg.startsWith('✓') ? 'bg-green-400/10 text-green-400' :
-                      settleMsg.startsWith('Already') ? 'bg-white/5 text-muted' : 'bg-red-400/10 text-red-400'
-                   }`}>
-                      {settleMsg}
-                   </div>
-                )}
 
                {/* Recent History */}
                <div className="space-y-4">

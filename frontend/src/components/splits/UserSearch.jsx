@@ -34,8 +34,8 @@ export default function UserSearch({ onAdd, excludeIds = [], placeholder = 'Sear
     e.stopPropagation();
     try {
       await axios.post(`${API_URL}/friends/request/${userId}`);
-      // Refresh results to show pending status
-      setResults(prev => prev.map(u => u._id === userId ? { ...u, friendship: { status: 'pending' } } : u));
+      // Refresh results to show accepted status (since we have auto-accept)
+      setResults(prev => prev.map(u => u._id === userId ? { ...u, friendship: { status: 'accepted' } } : u));
     } catch (err) {
       console.error(err);
     }

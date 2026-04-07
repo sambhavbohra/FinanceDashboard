@@ -197,31 +197,31 @@ export default function Splits() {
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-      <header className="flex justify-between items-center">
-        <div className="flex-1">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex-1 w-full sm:w-auto">
           <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black text-white mb-1 tracking-tighter flex items-center gap-4">
+             className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter flex items-center gap-4">
             {selectedGroup ? (
-              <div className="flex items-center gap-3">
-                <button onClick={() => { setSelectedGroup(null); setShowManagement(false); }} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-accent/10 transition-all text-white hover:text-accent">
-                   <ArrowLeft size={24} strokeWidth={3} />
+              <div className="flex items-center gap-3 w-full">
+                <button onClick={() => { setSelectedGroup(null); setShowManagement(false); }} className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-accent/10 transition-all text-white hover:text-accent shrink-0">
+                   <ArrowLeft size={20} className="sm:w-6 sm:h-6" strokeWidth={3} />
                 </button>
-                <div className="flex items-center gap-2">
-                   <span className="text-3xl">{selectedGroup.emoji}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                   <span className="text-2xl sm:text-3xl shrink-0">{selectedGroup.emoji}</span>
                    <span className="truncate max-w-[150px] sm:max-w-none">{selectedGroup.name}</span>
                 </div>
                 {isCreatorOfGroup(selectedGroup) && (
                   <button 
                     onClick={() => setShowManagement(!showManagement)}
-                    className={`p-3 rounded-xl transition-all border ml-2 ${showManagement ? 'bg-accent text-primary border-accent' : 'bg-white/5 border-white/10 text-white hover:border-white/20'}`}
+                    className={`p-2.5 sm:p-3 rounded-xl transition-all border ml-auto sm:ml-2 ${showManagement ? 'bg-accent text-primary border-accent' : 'bg-white/5 border-white/10 text-white hover:border-white/20'}`}
                   >
-                     <Settings size={16} />
+                     <Settings size={14} className="sm:w-4 sm:h-4" />
                   </button>
                 )}
               </div>
             ) : 'Group Splits'}
           </motion.h1>
-          <p className="text-muted text-[10px] font-black uppercase tracking-[0.2em]">{selectedGroup ? `${selectedGroup.members?.length} active participants` : 'Smart shared finances'}</p>
+          <p className="text-muted text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{selectedGroup ? `${selectedGroup.members?.length} active participants` : 'Smart shared finances'}</p>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -238,7 +238,7 @@ export default function Splits() {
                        openGroup(res.data);
                     } catch (e) { console.error(e); }
                  }}
-                 placeholder="Search squad or quick split..."
+                 placeholder="Search or quick split..."
               />
            </div>
            
@@ -246,7 +246,7 @@ export default function Splits() {
               <motion.button
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                 onClick={() => setShowBulkSplit(true)}
-                className="bg-green-400 text-primary px-6 py-4 rounded-2xl font-black hover:bg-green-300 transition-all shadow-xl shadow-green-400/20 flex items-center gap-2 uppercase text-[10px] tracking-widest h-14"
+                className="bg-green-400 text-primary px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-black hover:bg-green-300 transition-all shadow-xl shadow-green-400/20 flex items-center gap-2 uppercase text-[9px] sm:text-[10px] tracking-widest h-12 sm:h-14 shrink-0"
               >
                  Fast Disperse
               </motion.button>
@@ -254,9 +254,9 @@ export default function Splits() {
 
            <motion.button
              onClick={() => selectedGroup ? setShowAddExpense(true) : setShowCreateGroup(true)}
-             className="bg-accent text-primary px-6 py-4 rounded-2xl font-black hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 flex items-center gap-2 uppercase text-xs tracking-widest h-14 shrink-0"
+             className="bg-accent text-primary px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-black hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 flex items-center gap-2 uppercase text-[10px] sm:text-xs tracking-widest h-12 sm:h-14 shrink-0"
            >
-             <Plus size={22} strokeWidth={4} />
+             <Plus size={20} className="sm:w-[22px]" strokeWidth={4} />
              <span className="hidden sm:inline">{selectedGroup ? 'Add Split' : 'New Group'}</span>
            </motion.button>
         </div>
@@ -265,14 +265,14 @@ export default function Splits() {
       <AnimatePresence mode="wait">
         {!selectedGroup ? (
           <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <div className="glass-card p-6 border-l-4 border-l-green-400">
-                  <p className="text-muted text-[10px] font-black uppercase tracking-widest mb-1">Owed to you</p>
-                  <p className="text-4xl font-black text-green-400 font-mono tracking-tighter">{formatCurrency((balances || []).filter(b => b.amount > 0).reduce((a, b) => a + b.amount, 0))}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="glass-card p-5 sm:p-6 border-l-4 border-l-green-400 shadow-lg shadow-green-400/5">
+                  <p className="text-muted text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1">Owed to you</p>
+                  <p className="text-3xl sm:text-4xl font-black text-green-400 font-mono tracking-tighter truncate">{formatCurrency((balances || []).filter(b => b.amount > 0).reduce((a, b) => a + b.amount, 0))}</p>
                </div>
-               <div className="glass-card p-6 border-l-4 border-l-red-400">
-                  <p className="text-muted text-[10px] font-black uppercase tracking-widest mb-1">You owe friends</p>
-                  <p className="text-4xl font-black text-red-400 font-mono tracking-tighter">{formatCurrency((balances || []).filter(b => b.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0))}</p>
+               <div className="glass-card p-5 sm:p-6 border-l-4 border-l-red-400 shadow-lg shadow-red-400/5">
+                  <p className="text-muted text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1">You owe friends</p>
+                  <p className="text-3xl sm:text-4xl font-black text-red-400 font-mono tracking-tighter truncate">{formatCurrency((balances || []).filter(b => b.amount < 0).reduce((a, b) => a + Math.abs(b.amount), 0))}</p>
                </div>
             </div>
 

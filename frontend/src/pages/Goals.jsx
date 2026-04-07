@@ -5,6 +5,7 @@ import { Target, TrendingUp, Plus, Trash2 } from 'lucide-react';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 import AddGoalModal from '../components/dashboard/AddGoalModal';
+import Modal from '../components/ui/Modal';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
@@ -170,65 +171,68 @@ export default function Goals() {
           })}
         </div>
       )}
+      <AddGoalModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+      />
+
       {/* Fund Goal Modal */}
-      {fundingGoal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-primary border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl relative"
-          >
-            <h2 className="text-xl font-bold text-white mb-2">Fund Goal: {fundingGoal.name}</h2>
-            <p className="text-sm text-muted mb-6">
-              Remaining: {formatCurrency(fundingGoal.target - fundingGoal.current)}
-            </p>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded-xl flex items-center gap-2">
-                <Trash2 size={14} /> {error}
+      <Modal 
+        isOpen={!!fundingGoal} 
+        onClose={() => { setFundingGoal(null); setFundAmount(''); }}
+        title={fundingGoal ? `Fund Goal: ${fundingGoal.name}` : 'Fund Goal'}
+      >
+        <div className="space-y-6">
+          {!fundingGoal ? null : (
+            <>
+              <div className="flex flex-col items-center justify-center py-4 bg-accent/5 border border-accent/10 rounded-2xl mb-2">
+                 <p className="text-[10px] text-muted uppercase tracking-[0.2em] font-black mb-1">Remaining Obligations</p>
+                 <p className="text-2xl font-black text-accent">{formatCurrency(fundingGoal.target - fundingGoal.current)}</p>
               </div>
-            )}
 
-            <form onSubmit={handleAddFunds} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Amount to add (₹)</label>
-                <div className="relative">
-                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-bold text-sm">₹</span>
-                   <input
-                     type="number"
-                     min="1"
-                     max={fundingGoal.target - fundingGoal.current}
-                     required
-                     value={fundAmount}
-                     onChange={(e) => setFundAmount(e.target.value)}
-                     className="w-full bg-secondary border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all font-semibold shadow-sm text-lg"
-                     placeholder="0"
-                     autoFocus
-                   />
+              <form onSubmit={handleAddFunds} className="space-y-6">
+                <div>
+                  <label className="block text-[9px] font-black text-muted uppercase tracking-[0.3em] mb-3">Capital Injection (₹)</label>
+                  <div className="relative group">
+                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent font-black text-lg transition-colors">₹</span>
+                     <input
+                       type="number"
+                       min="1"
+                       max={fundingGoal.target - fundingGoal.current}
+                       required
+                       value={fundAmount}
+                       onChange={(e) => setFundAmount(e.target.value)}
+                       className="w-full bg-secondary border border-white/10 rounded-2xl py-4 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all font-black shadow-sm text-xl outline-none"
+                       placeholder="0"
+                       autoFocus
+                     />
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => { setFundingGoal(null); setFundAmount(''); }}
-                  className="flex-1 py-3 bg-secondary text-white rounded-xl font-bold hover:bg-white/5 transition-all outline-none"
-                  disabled={fundingLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-accent text-primary rounded-xl font-bold hover:opacity-90 transition-all outline-none flex items-center justify-center gap-2"
-                  disabled={fundingLoading || !fundAmount}
-                >
-                  {fundingLoading ? 'Adding...' : 'Add Funds'}
-                </button>
-              </div>
-            </form>
-          </motion.div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setFundingGoal(null); setFundAmount(''); }}
+                    className="flex-1 py-4 bg-secondary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/5 transition-all outline-none active:scale-95 border border-white/5"
+                    disabled={fundingLoading}
+                  >
+                    Abort
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-4 bg-accent text-primary rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-accent/90 transition-all outline-none flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-accent/20"
+                    disabled={fundingLoading || !fundAmount}
+                  >
+                    {fundingLoading ? (
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : 'Initialize Funding'}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

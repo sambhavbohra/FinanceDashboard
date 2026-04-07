@@ -3,14 +3,33 @@ import { useFinance } from '../context/FinanceContext';
 import OverviewCards from '../components/dashboard/OverviewCards';
 import TransactionList from '../components/dashboard/TransactionList';
 import { CashflowLineChart } from '../components/dashboard/Charts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import AddTransactionModal from '../components/dashboard/AddTransactionModal';
-import { Plus, Inbox } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Inbox, Gavel, ArrowRight } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
   const { user, transactions, goals, healthScore } = useFinance();
   const [showModal, setShowModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const fetchPending = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/requests/pending`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingCount(res.data.length);
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    fetchPending();
+    const interval = setInterval(fetchPending, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getTimeGreeting = () => {
     const hr = new Date().getHours();
@@ -42,6 +61,39 @@ export default function Dashboard() {
           Post Entry <Plus size={20} strokeWidth={4} />
         </button>
       </header>
+
+      {/* Democracy Alert */}
+      <AnimatePresence>
+        {pendingCount > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="group relative"
+          >
+            <Link to="/decisions" className="flex items-center justify-between p-6 glass-card bg-accent/5 border-l-4 border-l-accent hover:bg-accent/10 transition-all overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-all rotate-12">
+                <Gavel size={120} weight="fill" />
+              </div>
+              <div className="flex items-center gap-6 relative z-10">
+                <div className="w-16 h-16 rounded-[24px] bg-accent text-primary flex items-center justify-center shadow-xl shadow-accent/20">
+                  <Gavel size={28} strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="text-white font-black text-xl tracking-tighter uppercase leading-none mb-1">Consensus Signal Required</h3>
+                  <p className="text-muted text-[10px] font-black uppercase tracking-[0.2em]">There are {pendingCount} shared adjustments waiting for your digital signature</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-accent opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">Enter Council Hub</span>
+                <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-primary transition-all">
+                  <ArrowRight size={20} strokeWidth={3} />
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <OverviewCards />
 

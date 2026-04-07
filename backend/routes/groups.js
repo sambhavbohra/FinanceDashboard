@@ -6,6 +6,8 @@ const User = require('../models/User');
 const auth = require('../middleware/authMiddleware');
 const crypto = require('crypto');
 const Transaction = require('../models/Transaction');
+const Notification = require('../models/Notification');
+const SplitRequest = require('../models/SplitRequest');
 
 // Helper to calculate total group balances for a user
 const calculateGroupBalances = async (userId) => {
@@ -135,10 +137,12 @@ router.post('/:id/expenses', auth, async (req, res) => {
     if (myPayment) {
        const personalTx = new Transaction({
           user: req.user.userId,
-          name: txName, // "Split - FriendName"
+          name: txName,
           amount: myPayment.amount,
           type: 'expense',
           category: 'Split',
+          isSplit: true,
+          splitId: expense._id,
           date: expense.date || new Date()
        });
        await personalTx.save();
@@ -172,7 +176,7 @@ router.get('/:id/expenses', auth, async (req, res) => {
    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Delete Group Expense
+// Delete Group Expense -> Request
 router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
    try {
      const expense = await GroupExpense.findById(req.params.expenseId).populate('group');
@@ -184,40 +188,87 @@ router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
         return res.status(403).json({ message: 'Only payers or group owner can delete splits' });
      }
 
-     await GroupExpense.findByIdAndDelete(req.params.expenseId);
-     res.json({ message: 'Expense deleted' });
-   } catch (err) {
-      res.status(500).json({ message: err.message });
-   }
+     const notifyUserIds = [...new Set([
+        ...expense.splits.map(s => s.user.toString()),
+        ...expense.payers.map(p => p.user.toString())
+     ])].filter(id => id !== req.user.userId);
+
+     if (notifyUserIds.length === 0) {
+        await GroupExpense.findByIdAndDelete(req.params.expenseId);
+        await Transaction.deleteMany({ splitId: req.params.expenseId });
+        return res.json({ message: 'Expense deleted' });
+     }
+
+     const splitRequest = new SplitRequest({
+        requester: req.user.userId,
+        group: expense.group._id,
+        expense: expense._id,
+        type: 'delete',
+        approvals: notifyUserIds.map(uid => ({ user: uid, status: 'pending' }))
+     });
+     await splitRequest.save();
+
+     const notifications = notifyUserIds.map(uid => ({
+        user: uid,
+        title: "Delete Request",
+        message: `${req.user.name || 'A member'} wants to delete "${expense.description}".`,
+        type: 'request',
+        relatedGroup: expense.group._id,
+        relatedExpense: expense._id
+     }));
+     await Notification.insertMany(notifications);
+
+     res.json({ message: 'Deletion request sent', requestId: splitRequest._id });
+   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Update Group Expense
+// Update Group Expense -> Request
 router.put('/:groupId/expenses/:expenseId', auth, async (req, res) => {
    try {
      const expense = await GroupExpense.findById(req.params.expenseId).populate('group');
      if (!expense) return res.status(404).json({ message: 'Expense not found' });
      
-     // Ensure user is authorized to edit it (creator of group, or was an original payer, or new payer)
+     // Auth check
      const amIPayer = expense.payers.some(p => p.user?.toString() === req.user.userId);
      const isOwner = expense.group.createdBy.toString() === req.user.userId;
      if (!amIPayer && !isOwner) {
-        return res.status(403).json({ message: 'Only payers or group owner can edit splits' });
+        return res.status(403).json({ message: 'Only payers or group owner can refine splits' });
      }
 
-     const updated = await GroupExpense.findByIdAndUpdate(
-        req.params.expenseId,
-        {
-           description: req.body.description,
-           totalAmount: req.body.totalAmount,
-           category: req.body.category,
-           date: req.body.date,
-           payers: req.body.payers,
-           splits: req.body.splits
-        },
-        { new: true }
-     ).populate('payers.user splits.user');
+     // Identify impacted users (original members OR new members in the update)
+     const notifyUserIds = [...new Set([
+        ...expense.splits.map(s => s.user.toString()),
+        ...req.body.splits.map(s => s.user.toString())
+     ])].filter(id => id && id !== req.user.userId);
 
-     res.json(updated);
+     if (notifyUserIds.length === 0) {
+        const updated = await GroupExpense.findByIdAndUpdate(req.params.expenseId, req.body, { new: true });
+        return res.json(updated);
+     }
+
+     // Create Edit Request
+     const splitRequest = new SplitRequest({
+        requester: req.user.userId,
+        group: expense.group._id,
+        expense: expense._id,
+        type: 'edit',
+        pendingData: req.body,
+        approvals: notifyUserIds.map(uid => ({ user: uid, status: 'pending' }))
+     });
+     await splitRequest.save();
+
+     // Broadcast
+     const notifications = notifyUserIds.map(uid => ({
+        user: uid,
+        title: "Revision Request",
+        message: `${req.user.name || 'A member'} wants to edit the expense "${expense.description}" to ₹${req.body.totalAmount}.`,
+        type: 'request',
+        relatedGroup: expense.group._id,
+        relatedExpense: expense._id
+     }));
+     await Notification.insertMany(notifications);
+
+     res.json({ message: 'Revision request sent for approval', requestId: splitRequest._id });
    } catch (err) {
       res.status(500).json({ message: err.message });
    }
@@ -251,6 +302,8 @@ router.patch('/:groupId/expenses/:expenseId/settle', auth, async (req, res) => {
            amount: split.amount,
            type: 'income',
            category: 'Split',
+           isSplit: true,
+           splitId: expense._id,
            date: new Date()
         });
         await incomeTx.save();
@@ -262,6 +315,8 @@ router.patch('/:groupId/expenses/:expenseId/settle', auth, async (req, res) => {
               amount: split.amount,
               type: 'expense',
               category: 'Split',
+              isSplit: true,
+              splitId: expense._id,
               date: new Date()
            });
            await repaymentTx.save();
@@ -329,6 +384,7 @@ router.post('/settle-with/:otherUserId', auth, async (req, res) => {
             amount: Math.abs(netDelta),
             type: 'income',
             category: 'Split',
+            isSplit: true,
             date: new Date()
          });
          
@@ -339,6 +395,7 @@ router.post('/settle-with/:otherUserId', auth, async (req, res) => {
                amount: Math.abs(netDelta),
                type: 'expense',
                category: 'Split',
+               isSplit: true,
                date: new Date()
             });
          }
@@ -350,6 +407,7 @@ router.post('/settle-with/:otherUserId', auth, async (req, res) => {
             amount: Math.abs(netDelta),
             type: 'expense',
             category: 'Split',
+            isSplit: true,
             date: new Date()
          });
 
@@ -360,6 +418,7 @@ router.post('/settle-with/:otherUserId', auth, async (req, res) => {
                amount: Math.abs(netDelta),
                type: 'income',
                category: 'Split',
+               isSplit: true,
                date: new Date()
             });
          }

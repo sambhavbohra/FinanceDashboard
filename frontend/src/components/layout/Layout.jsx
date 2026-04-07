@@ -1,6 +1,7 @@
 import React from 'react';
+import axios from 'axios';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, BarChart2, Target, Zap, Settings, Users, ArrowRight, Sparkles, User, Wallet, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart2, Target, Zap, Settings, Users, ArrowRight, Sparkles, User, Wallet, Menu, X, Gavel, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFinance } from '../../context/FinanceContext';
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { useState, useEffect } from 'react';
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Feed', path: '/' },
   { icon: Wallet, label: 'Wallet', path: '/transactions' },
+  { icon: Gavel, label: 'Decisions', path: '/decisions' },
   { icon: Users, label: 'Squad', path: '/friends' },
   { icon: ArrowRight, label: 'Splits', path: '/splits' },
   { icon: BarChart2, label: 'Analytics', path: '/analytics' },
@@ -20,6 +22,21 @@ export default function Layout({ children }) {
   const { user } = useFinance();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const fetchPending = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/requests/pending`, { headers: { Authorization: `Bearer ${token}` } });
+      setPendingCount(res.data.length);
+    } catch (e) { /* ignore */ }
+  };
+
+  useEffect(() => {
+    fetchPending();
+    const interval = setInterval(fetchPending, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -60,6 +77,11 @@ export default function Layout({ children }) {
               >
                  <item.icon size={22} strokeWidth={location.pathname === item.path ? 3 : 2} className="relative z-10" />
                  <span className="font-bold tracking-tight relative z-10">{item.label}</span>
+                 {item.label === 'Decisions' && pendingCount > 0 && (
+                    <div className="absolute right-4 w-5 h-5 bg-accent text-primary rounded-lg flex items-center justify-center text-[10px] font-black z-10 shadow-lg shadow-accent/20 animate-bounce">
+                       {pendingCount}
+                    </div>
+                 )}
                  <AnimatePresence>
                     {location.pathname === item.path && (
                        <motion.div
@@ -72,7 +94,7 @@ export default function Layout({ children }) {
            ))}
         </nav>
 
-        <div className="mt-auto pt-8 border-t border-white/5">
+         <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
            <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/5 transition-all">
               <div className="w-11 h-11 rounded-[18px] bg-secondary flex items-center justify-center font-black text-accent shadow-inner overflow-hidden">
                  {user?.picture ? <img src={user.picture} className="w-full h-full object-cover" alt="" /> : user?.name?.[0]}
@@ -122,12 +144,14 @@ export default function Layout({ children }) {
             <Wallet size={24} className="text-accent" strokeWidth={3} />
             <span className="font-black italic uppercase tracking-tighter text-sm">FIN<span className="text-accent">TRACK</span></span>
          </div>
-         <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-3 -mr-2 text-white bg-white/5 rounded-xl border border-white/10"
-         >
-            <Menu size={20} />
-         </button>
+         <div className="flex items-center gap-2">
+            <button 
+               onClick={() => setIsSidebarOpen(true)}
+               className="p-3 -mr-2 text-white bg-white/5 rounded-xl border border-white/10"
+            >
+               <Menu size={20} />
+            </button>
+         </div>
       </header>
 
       {/* Main Content */}

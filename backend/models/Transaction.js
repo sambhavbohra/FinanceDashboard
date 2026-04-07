@@ -7,6 +7,8 @@ const TransactionSchema = new mongoose.Schema({
   category: { type: String, required: true },
   date: { type: Date, required: true, default: Date.now },
   name: { type: String, required: true },
+  isSplit: { type: Boolean, default: false },
+  splitId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group.expenses' }
 });
 
 module.exports = mongoose.model('Transaction', TransactionSchema);

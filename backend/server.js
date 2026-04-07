@@ -24,6 +24,8 @@ app.use('/api/data', dataRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/requests', require('./routes/requests'));
 
 const PORT = process.env.PORT || 5001;
 

@@ -13,6 +13,7 @@ import Friends from './pages/Friends';
 import Login from './pages/Login';
 import CompleteProfile from './pages/CompleteProfile';
 import JoinGroup from './pages/JoinGroup';
+import Decisions from './pages/Decisions';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useFinance();
@@ -51,6 +52,7 @@ const AppContent = () => (
       <Route path="/insights" element={<PrivateRoute><Layout><Insights /></Layout></PrivateRoute>} />
       <Route path="/splits" element={<PrivateRoute><Layout><Splits /></Layout></PrivateRoute>} />
       <Route path="/friends" element={<PrivateRoute><Layout><Friends /></Layout></PrivateRoute>} />
+      <Route path="/decisions" element={<PrivateRoute><Layout><Decisions /></Layout></PrivateRoute>} />
       <Route path="/settings" element={<PrivateRoute><Layout><Settings /></Layout></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

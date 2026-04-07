@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { motion } from 'framer-motion';
 import AddTransactionModal from '../components/dashboard/AddTransactionModal';
-import { ShoppingBag, Coffee, Car, GraduationCap, Link2, DollarSign, Plus, Inbox, Trash2, Edit } from 'lucide-react';
+import { ShoppingBag, Coffee, Car, GraduationCap, Link2, DollarSign, Plus, Inbox, Trash2, Edit, Lock } from 'lucide-react';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -156,19 +156,27 @@ export default function Transactions() {
                       {tx.type}
                     </span>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleEdit(tx)}
-                      className="p-3 text-muted hover:text-accent hover:bg-accent/10 rounded-xl transition-all active:scale-90"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(tx._id)}
-                      className="p-3 text-muted hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all active:scale-90"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                  <div className="flex gap-2">
+                    {tx.isSplit ? (
+                       <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-xl text-accent text-[8px] font-black uppercase tracking-[0.2em]">
+                          <Lock size={12} /> Managed by Split
+                       </div>
+                    ) : (
+                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEdit(tx)}
+                          className="p-3 text-muted hover:text-accent hover:bg-accent/10 rounded-xl transition-all active:scale-90"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(tx._id)}
+                          className="p-3 text-muted hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all active:scale-90"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

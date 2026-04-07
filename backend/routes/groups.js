@@ -182,23 +182,27 @@ router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
      const expense = await GroupExpense.findById(req.params.expenseId).populate('group');
      if (!expense) return res.status(404).json({ message: 'Expense not found' });
      
-     const amIPayer = expense.payers.some(p => p.user?.toString() === req.user.userId);
-     const isOwner = expense.group.createdBy.toString() === req.user.userId;
-     if (!amIPayer && !isOwner) {
-        return res.status(403).json({ message: 'Only payers or group owner can delete splits' });
-     }
+     const group = await Group.findById(expense.group._id).populate('members');
+     const realHumanIds = group.members
+        .filter(m => !m.isTest && m._id.toString() !== req.user.userId)
+        .map(m => m._id.toString());
 
-     const notifyUserIds = [...new Set([
+     // Filter humanity: Does this split involve any real humans (other than me)?
+     const involvedUserIds = [...new Set([
         ...expense.splits.map(s => s.user.toString()),
         ...expense.payers.map(p => p.user.toString())
-     ])].filter(id => id !== req.user.userId);
+     ])];
+
+     const notifyUserIds = involvedUserIds.filter(id => realHumanIds.includes(id));
 
      if (notifyUserIds.length === 0) {
+        // Safe: No other humans involved. Sync Delete.
         await GroupExpense.findByIdAndDelete(req.params.expenseId);
         await Transaction.deleteMany({ splitId: req.params.expenseId });
-        return res.json({ message: 'Expense deleted' });
+        return res.json({ message: 'Expense deleted (Immediate Update)' });
      }
 
+     // Democratic Round Required
      const splitRequest = new SplitRequest({
         requester: req.user.userId,
         group: expense.group._id,
@@ -208,17 +212,16 @@ router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
      });
      await splitRequest.save();
 
-     const notifications = notifyUserIds.map(uid => ({
+     await Notification.insertMany(notifyUserIds.map(uid => ({
         user: uid,
         title: "Delete Request",
         message: `${req.user.name || 'A member'} wants to delete "${expense.description}".`,
         type: 'request',
         relatedGroup: expense.group._id,
         relatedExpense: expense._id
-     }));
-     await Notification.insertMany(notifications);
+     })));
 
-     res.json({ message: 'Deletion request sent', requestId: splitRequest._id });
+     res.json({ message: 'Deletion request sent to council', requestId: splitRequest._id });
    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -228,25 +231,34 @@ router.put('/:groupId/expenses/:expenseId', auth, async (req, res) => {
      const expense = await GroupExpense.findById(req.params.expenseId).populate('group');
      if (!expense) return res.status(404).json({ message: 'Expense not found' });
      
-     // Auth check
-     const amIPayer = expense.payers.some(p => p.user?.toString() === req.user.userId);
-     const isOwner = expense.group.createdBy.toString() === req.user.userId;
-     if (!amIPayer && !isOwner) {
-        return res.status(403).json({ message: 'Only payers or group owner can refine splits' });
-     }
+     const group = await Group.findById(expense.group._id).populate('members');
+     const realHumanIds = group.members
+        .filter(m => !m.isTest && m._id.toString() !== req.user.userId)
+        .map(m => m._id.toString());
 
-     // Identify impacted users (original members OR new members in the update)
-     const notifyUserIds = [...new Set([
+     // Identify humans impacted by BOTH original and new split
+     const involvedUserIds = [...new Set([
         ...expense.splits.map(s => s.user.toString()),
         ...req.body.splits.map(s => s.user.toString())
-     ])].filter(id => id && id !== req.user.userId);
+     ])];
+
+     const notifyUserIds = involvedUserIds.filter(id => realHumanIds.includes(id));
 
      if (notifyUserIds.length === 0) {
+        // Safe: No other humans involved. Direct refinement.
         const updated = await GroupExpense.findByIdAndUpdate(req.params.expenseId, req.body, { new: true });
+        // SYNC: Update requester's personal transaction history
+        const myPayment = req.body.payers.find(p => p.user === req.user.userId);
+        if (myPayment) {
+           await Transaction.findOneAndUpdate(
+              { splitId: expense._id, user: req.user.userId, type: 'expense' },
+              { amount: myPayment.amount, name: `Split: ${updated.description}`, date: updated.date || new Date() }
+           );
+        }
         return res.json(updated);
      }
 
-     // Create Edit Request
+     // Democratic Council Round Required
      const splitRequest = new SplitRequest({
         requester: req.user.userId,
         group: expense.group._id,
@@ -257,21 +269,17 @@ router.put('/:groupId/expenses/:expenseId', auth, async (req, res) => {
      });
      await splitRequest.save();
 
-     // Broadcast
-     const notifications = notifyUserIds.map(uid => ({
+     await Notification.insertMany(notifyUserIds.map(uid => ({
         user: uid,
         title: "Revision Request",
         message: `${req.user.name || 'A member'} wants to edit the expense "${expense.description}" to ₹${req.body.totalAmount}.`,
         type: 'request',
         relatedGroup: expense.group._id,
         relatedExpense: expense._id
-     }));
-     await Notification.insertMany(notifications);
+     })));
 
-     res.json({ message: 'Revision request sent for approval', requestId: splitRequest._id });
-   } catch (err) {
-      res.status(500).json({ message: err.message });
-   }
+     res.json({ message: 'Revision request sent to democratic council', requestId: splitRequest._id });
+   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // Mark Split as Settled (Received)

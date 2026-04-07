@@ -96,10 +96,26 @@ export default function AddExpenseModal({ isOpen, onClose, group, currentUser, o
 
   const buildSplits = () => {
     if (form.splitType === 'equal') {
-      const share = amountToSplit / members.length;
-      return members.map(m => ({ user: m._id, amount: parseFloat(share.toFixed(2)), paid: false }));
+      const share = amountToSplit / (members.length || 1);
+      const roundedShare = parseFloat(share.toFixed(2));
+      return members.map(m => {
+         const existing = initialExpense?.splits?.find(s => (s.user?._id || s.user) === m._id);
+         return { 
+           user: m._id, 
+           amount: roundedShare, 
+           paid: existing ? (existing.amount === roundedShare ? existing.paid : false) : false 
+         };
+      });
     }
-    return members.map(m => ({ user: m._id, amount: parseFloat(customSplits[m._id] || 0), paid: false }));
+    return members.map(m => {
+       const existing = initialExpense?.splits?.find(s => (s.user?._id || s.user) === m._id);
+       const val = parseFloat(customSplits[m._id] || 0);
+       return { 
+         user: m._id, 
+         amount: val, 
+         paid: existing ? (existing.amount === val ? existing.paid : false) : false 
+       };
+    });
   };
 
   const handleSubmit = async (e) => {

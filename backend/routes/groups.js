@@ -244,19 +244,28 @@ router.put('/:groupId/expenses/:expenseId', auth, async (req, res) => {
 
      const notifyUserIds = involvedUserIds.filter(id => realHumanIds.includes(id));
 
-     if (notifyUserIds.length === 0) {
-        // Safe: No other humans involved. Direct refinement.
-        const updated = await GroupExpense.findByIdAndUpdate(req.params.expenseId, req.body, { new: true });
-        // SYNC: Update requester's personal transaction history
-        const myPayment = req.body.payers.find(p => p.user === req.user.userId);
-        if (myPayment) {
-           await Transaction.findOneAndUpdate(
-              { splitId: expense._id, user: req.user.userId, type: 'expense' },
-              { amount: myPayment.amount, name: `Split: ${updated.description}`, date: updated.date || new Date() }
-           );
-        }
-        return res.json(updated);
-     }
+      if (notifyUserIds.length === 0) {
+         // Safe: No other humans involved. Direct refinement.
+         const updated = await GroupExpense.findByIdAndUpdate(req.params.expenseId, req.body, { new: true });
+         
+         // SYNC: Update requester's personal transaction history
+         const myPayment = req.body.payers.find(p => p.user === req.user.userId);
+         if (myPayment) {
+            // Determine name format: "Split - Name" for 1-on-1, or "Split: Desc" for group
+            let txName = `Split: ${updated.description}`;
+            if (group.isPrivate && group.members.length === 2) {
+               const otherMember = group.members.find(m => m._id.toString() !== req.user.userId);
+               const otherName = otherMember ? otherMember.name.split(' ')[0] : 'Friend';
+               txName = `Split - ${otherName}`;
+            }
+
+            await Transaction.findOneAndUpdate(
+               { splitId: expense._id, user: req.user.userId, type: 'expense' },
+               { amount: myPayment.amount, name: txName, date: updated.date || new Date() }
+            );
+         }
+         return res.json(updated);
+      }
 
      // Democratic Council Round Required
      const splitRequest = new SplitRequest({

@@ -485,7 +485,22 @@ export default function Splits() {
         isOpen={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         currentUserId={user?._id}
-        onCreated={(group) => setGroups(prev => [group, ...prev])}
+        onCreated={(group) => {
+           setGroups(prev => [group, ...prev]);
+           openGroup(group);
+        }}
+      />
+      <AddExpenseModal
+        isOpen={showAddExpense}
+        onClose={() => { setShowAddExpense(false); setEditingExpense(null); }}
+        group={selectedGroup}
+        currentUser={user}
+        initialExpense={editingExpense}
+        onAdded={() => {
+           fetchGroupExpenses(selectedGroup._id);
+           fetchBalances();
+           globalFetchData();
+        }}
       />
       {showBulkSplit && (
          <BulkSplitModal 

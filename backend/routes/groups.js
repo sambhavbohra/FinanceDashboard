@@ -188,6 +188,7 @@ router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
         .map(m => m._id.toString());
 
      // Filter humanity: Does this split involve any real humans (other than me)?
+     // Identify humans impacted by this split
      const involvedUserIds = [...new Set([
         ...expense.splits.map(s => s.user.toString()),
         ...expense.payers.map(p => p.user.toString())
@@ -195,8 +196,8 @@ router.delete('/:groupId/expenses/:expenseId', auth, async (req, res) => {
 
      const notifyUserIds = involvedUserIds.filter(id => realHumanIds.includes(id));
 
-     if (notifyUserIds.length === 0) {
-        // Safe: No other humans involved. Sync Delete.
+     // DIRECT DELETE: If there's no other human involved OR if it's a private 1-on-1 group
+     if (notifyUserIds.length === 0 || group.isPrivate) {
         await GroupExpense.findByIdAndDelete(req.params.expenseId);
         await Transaction.deleteMany({ splitId: req.params.expenseId });
         return res.json({ message: 'Expense deleted (Immediate Update)' });
@@ -244,14 +245,13 @@ router.put('/:groupId/expenses/:expenseId', auth, async (req, res) => {
 
      const notifyUserIds = involvedUserIds.filter(id => realHumanIds.includes(id));
 
-      if (notifyUserIds.length === 0) {
-         // Safe: No other humans involved. Direct refinement.
+      // DIRECT UPDATE: If no other humans involved OR if it's a private 1-on-1 group
+      if (notifyUserIds.length === 0 || group.isPrivate) {
          const updated = await GroupExpense.findByIdAndUpdate(req.params.expenseId, req.body, { new: true });
          
          // SYNC: Update requester's personal transaction history
          const myPayment = req.body.payers.find(p => p.user === req.user.userId);
          if (myPayment) {
-            // Determine name format: "Split - Name" for 1-on-1, or "Split: Desc" for group
             let txName = `Split: ${updated.description}`;
             if (group.isPrivate && group.members.length === 2) {
                const otherMember = group.members.find(m => m._id.toString() !== req.user.userId);
@@ -461,10 +461,15 @@ router.delete('/:id', auth, async (req, res) => {
          return res.status(403).json({ message: 'Only the creator can delete this group' });
       }
 
+      // COLLECT ALL EXPENSE IDS IN THE GROUP
+      const expenseIds = await GroupExpense.find({ group: req.params.id }).distinct('_id');
+      
+      // PURGE ALL DATA IN THE GROUP
+      await Transaction.deleteMany({ splitId: { $in: expenseIds } });
       await GroupExpense.deleteMany({ group: req.params.id });
       await Group.findByIdAndDelete(req.params.id);
       
-      res.json({ success: true, message: 'Group and all its expenses deleted' });
+      res.json({ success: true, message: 'Group, expenses, and transaction logs purged' });
    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -492,28 +497,27 @@ router.get('/balances/summary', auth, async (req, res) => {
     const balances = {}; // userId -> { user, amount }
 
     expenses.forEach(exp => {
-      // For each payer who isn't me, if I owe them, amount decreases
-      // For each splittee who isn't me, if I paid for them, amount increases
-      
       const mySplit = exp.splits.find(s => s.user?._id?.toString() === req.user.userId);
-      const IAmOwer = !!mySplit && !mySplit.paid;
-
+      
       exp.payers.forEach(payer => {
-         if (payer.user?._id?.toString() === req.user.userId) {
-            // I paid. Others owe me.
+         const payerId = payer.user?._id?.toString() || payer.user?.toString();
+         if (!payerId) return;
+
+         if (payerId === req.user.userId) {
+            // I paid. Others owe me a portion of their splits.
             exp.splits.forEach(split => {
-               if (split.user && split.user._id && split.user._id.toString() !== req.user.userId && !split.paid) {
-                  const targetId = split.user._id.toString();
-                  if (!balances[targetId]) balances[targetId] = { user: split.user, amount: 0 };
-                  balances[targetId].amount += split.amount;
+               const splitUserId = split.user?._id?.toString() || split.user?.toString();
+               if (splitUserId && splitUserId !== req.user.userId && !split.paid) {
+                  if (!balances[splitUserId]) balances[splitUserId] = { user: split.user, amount: 0 };
+                  balances[splitUserId].amount += (split.amount * (payer.amount / Math.max(exp.totalAmount, 1)));
                }
             });
-         } else if (IAmOwer && payer.user && payer.user._id) {
-            // Someone else paid. I owe them my share.
-            const payerId = payer.user._id.toString();
-            if (!balances[payerId]) balances[payerId] = { user: payer.user, amount: 0 };
-            const myShareToThisPayer = (mySplit.amount * (payer.amount / Math.max(exp.totalAmount, 1)));
-            balances[payerId].amount -= myShareToThisPayer;
+         } else {
+            // Someone else paid. I owe them a portion of MY split.
+            if (mySplit && !mySplit.paid) {
+               if (!balances[payerId]) balances[payerId] = { user: payer.user, amount: 0 };
+               balances[payerId].amount -= (mySplit.amount * (payer.amount / Math.max(exp.totalAmount, 1)));
+            }
          }
       });
     });

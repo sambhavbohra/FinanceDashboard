@@ -8,7 +8,7 @@ const formatCurrency = (amount) => {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
-  }).format(Math.abs(amount));
+  }).format(amount);
 };
 
 export default function OverviewCards() {
@@ -19,8 +19,8 @@ export default function OverviewCards() {
       title: 'Current Liquidity',
       amount: balance,
       icon: Activity,
-      color: 'text-accent',
-      bgColor: 'bg-accent/15',
+      color: balance >= 0 ? 'text-accent' : 'text-red-400',
+      bgColor: balance >= 0 ? 'bg-accent/15' : 'bg-red-400/15',
       trend: balance >= 0 ? 'Surplus' : 'Deficit',
     },
     {
@@ -43,8 +43,8 @@ export default function OverviewCards() {
       title: 'Capital Health',
       amount: transactions.length > 0 ? `${healthScore}/100` : 'N/A',
       icon: Laser, // Using SVG below
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-400/15',
+      color: (healthScore < 60 && transactions.length > 0) ? 'text-red-400' : 'text-blue-400',
+      bgColor: (healthScore < 60 && transactions.length > 0) ? 'bg-red-400/15' : 'bg-blue-400/15',
       trend: 'Optimization Required',
     }
   ];
@@ -76,11 +76,12 @@ export default function OverviewCards() {
               </div>
            </div>
 
-           <div className="space-y-1">
-              <h2 className={`text-white tracking-tighter truncate ${card.title === 'Capital Health' ? 'text-2xl sm:text-3xl italic font-black' : 'text-3xl sm:text-4xl font-black font-mono'}`}>
-                 {typeof card.amount === 'number' ? formatCurrency(card.amount) : card.amount}
-              </h2>
-           </div>
+            <div className="space-y-1">
+               <h2 className={`tracking-tighter truncate ${card.title === 'Capital Health' ? 'text-2xl sm:text-3xl italic font-black' : 'text-3xl sm:text-4xl font-black font-mono'} 
+                 ${(card.title === 'Current Liquidity' && card.amount < 0) || (card.title === 'Capital Health' && healthScore < 60 && transactions.length > 0) ? 'text-red-400' : 'text-white'}`}>
+                  {typeof card.amount === 'number' ? formatCurrency(card.amount) : card.amount}
+               </h2>
+            </div>
         </motion.div>
       ))}
     </div>

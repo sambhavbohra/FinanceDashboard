@@ -49,7 +49,7 @@ export default function Dashboard() {
             {getTimeGreeting()}, {user?.name?.split(' ')[0] || 'User'}!
             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           </h1>
-          <p className="text-muted text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] opacity-40 ml-1">
+          <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] ml-1 ${score < 60 && transactions.length > 0 ? 'text-red-400 opacity-80' : 'text-muted opacity-40'}`}>
             Capital Health Score: {transactions.length > 0 ? `${score}/100` : 'N/A'}
           </p>
         </div>

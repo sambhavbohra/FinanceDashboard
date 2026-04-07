@@ -103,10 +103,12 @@ export default function Goals() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {goals.map((goal, idx) => {
-            const available = Math.max(0, totalIncome - totalExpenses);
-            const progress = Math.min(100, Math.round((goal.current / goal.target) * 100));
+            const current = parseFloat(goal.current) || 0;
+            const target = parseFloat(goal.target) || 1; // Prevent division by zero
+            const progress = Math.min(100, Math.max(0, Math.round((current / target) * 100))) || 0;
             const isComplete = progress >= 100;
-
+            const remaining = Math.max(0, target - current);
+            
             return (
               <motion.div
                 key={goal._id || goal.id}
@@ -123,7 +125,7 @@ export default function Goals() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 bg-white/5 rounded-full text-xs text-muted border border-white/5">
-                      Due {new Date(goal.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      Due {isNaN(new Date(goal.deadline).getTime()) ? 'No Date' : new Date(goal.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     </span>
                     <button 
                       onClick={() => handleDeleteGoal(goal._id)}
@@ -136,7 +138,7 @@ export default function Goals() {
 
                 <h3 className="text-xl font-semibold text-white mb-1">{goal.name}</h3>
                 <p className="text-muted text-sm mb-5">
-                  {formatCurrency(goal.current)} <span className="text-white/20">/</span> {formatCurrency(goal.target)}
+                  {formatCurrency(current)} <span className="text-white/20">/</span> {formatCurrency(target)}
                 </p>
 
                 {isComplete ? (
@@ -155,7 +157,7 @@ export default function Goals() {
                 <div className="mt-auto">
                   <div className="flex justify-between text-xs mb-2">
                     <span className="text-white font-semibold">{progress}%</span>
-                    <span className="text-muted">{isComplete ? 'Complete' : `${formatCurrency(goal.target - goal.current)} to go`}</span>
+                    <span className="text-muted">{isComplete ? 'Complete' : `${formatCurrency(remaining)} to go`}</span>
                   </div>
                   <div className="w-full h-2.5 bg-secondary rounded-full overflow-hidden">
                     <motion.div
@@ -185,29 +187,29 @@ export default function Goals() {
         <div className="space-y-6">
           {!fundingGoal ? null : (
             <>
-              <div className="flex flex-col items-center justify-center py-4 bg-accent/5 border border-accent/10 rounded-2xl mb-2">
-                 <p className="text-[10px] text-muted uppercase tracking-[0.2em] font-black mb-1">Remaining Obligations</p>
-                 <p className="text-2xl font-black text-accent">{formatCurrency(fundingGoal.target - fundingGoal.current)}</p>
-              </div>
-
-              <form onSubmit={handleAddFunds} className="space-y-6">
-                <div>
-                  <label className="block text-[9px] font-black text-muted uppercase tracking-[0.3em] mb-3">Capital Injection (₹)</label>
-                  <div className="relative group">
-                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent font-black text-lg transition-colors">₹</span>
-                     <input
-                       type="number"
-                       min="1"
-                       max={fundingGoal.target - fundingGoal.current}
-                       required
-                       value={fundAmount}
-                       onChange={(e) => setFundAmount(e.target.value)}
-                       className="w-full bg-secondary border border-white/10 rounded-2xl py-4 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all font-black shadow-sm text-xl outline-none"
-                       placeholder="0"
-                       autoFocus
-                     />
-                  </div>
+                <div className="flex flex-col items-center justify-center py-4 bg-accent/5 border border-accent/10 rounded-2xl mb-2">
+                   <p className="text-[10px] text-muted uppercase tracking-[0.2em] font-black mb-1">Remaining Obligations</p>
+                   <p className="text-2xl font-black text-accent">{formatCurrency(parseFloat(fundingGoal.target) - parseFloat(fundingGoal.current))}</p>
                 </div>
+
+                <form onSubmit={handleAddFunds} className="space-y-6">
+                  <div>
+                    <label className="block text-[9px] font-black text-muted uppercase tracking-[0.3em] mb-3">Capital Injection (₹)</label>
+                    <div className="relative group">
+                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent font-black text-lg transition-colors">₹</span>
+                       <input
+                         type="number"
+                         min="1"
+                         max={parseFloat(fundingGoal.target) - parseFloat(fundingGoal.current)}
+                         required
+                         value={fundAmount}
+                         onChange={(e) => setFundAmount(e.target.value)}
+                         className="w-full bg-secondary border border-white/10 rounded-2xl py-4 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all font-black shadow-sm text-xl outline-none"
+                         placeholder="0"
+                         autoFocus
+                       />
+                    </div>
+                  </div>
 
                 <div className="flex gap-3 pt-2">
                   <button

@@ -107,14 +107,14 @@ export default function Wallet() {
       {/* Portfolio Pulse - Horizontal on Mobile */}
       <div className="flex overflow-x-auto gap-4 pb-4 md:grid md:grid-cols-3 no-scrollbar snap-x">
          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
-            className="flex-shrink-0 w-[85vw] md:w-auto snap-center glass-card p-8 border-accent/20 bg-gradient-to-br from-accent/10 to-transparent relative overflow-hidden group"
+            className={`flex-shrink-0 w-[85vw] md:w-auto snap-center glass-card p-8 relative overflow-hidden group transition-all duration-500 ${stats.balance < 0 ? 'border-red-500/30 bg-red-500/5 shadow-red-500/5' : 'border-accent/20 bg-gradient-to-br from-accent/10 to-transparent shadow-accent/5'}`}
          >
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-all" />
-            <p className="text-[10px] text-accent font-black uppercase tracking-widest mb-4 opacity-50 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            <div className={`absolute -right-4 -top-4 w-24 h-24  rounded-full blur-3xl transition-all ${stats.balance < 0 ? 'bg-red-500/10 group-hover:bg-red-500/20' : 'bg-accent/10 group-hover:bg-accent/20'}`} />
+            <p className={`text-[10px] font-black uppercase tracking-widest mb-4 opacity-50 flex items-center gap-2 transition-colors ${stats.balance < 0 ? 'text-red-400' : 'text-accent'}`}>
+               <div className={`w-1.5 h-1.5 rounded-full animate-pulse transition-colors ${stats.balance < 0 ? 'bg-red-400' : 'bg-accent'}`} />
                Current Liquidity
             </p>
-            <p className="text-4xl font-black text-white tracking-tight">{formatCurrency(stats.balance)}</p>
+            <p className={`text-4xl font-black tracking-tight transition-colors ${stats.balance < 0 ? 'text-red-400' : 'text-white'}`}>{formatCurrency(stats.balance)}</p>
          </motion.div>
 
          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

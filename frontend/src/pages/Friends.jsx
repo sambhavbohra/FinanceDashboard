@@ -190,12 +190,26 @@ function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 
                         </div>
                      ) : (
                         expenses.map(exp => {
-                           const IAmPayer = exp.payers[0]?.user?._id === user?._id;
+                           // Calculate net impact specifically between user and THIS friend for this expense
+                           const mySplit = exp.splits.find(s => s.user?._id === user?._id);
+                           const friendSplit = exp.splits.find(s => s.user?._id === friend._id);
+                           const myPayment = exp.payers.find(p => p.user?._id === user?._id);
+                           const friendPayment = exp.payers.find(p => p.user?._id === friend._id);
+
+                           const whatIModelledForFriend = friendSplit ? (friendSplit.amount * ((myPayment?.amount || 0) / exp.totalAmount)) : 0;
+                           const whatFriendModelledForMe = mySplit ? (mySplit.amount * ((friendPayment?.amount || 0) / exp.totalAmount)) : 0;
+                           
+                           const netImpact = whatIModelledForFriend - whatFriendModelledForMe;
+                           const impactType = netImpact >= 0 ? 'lent' : 'borrowed';
+                           const displayAmount = Math.abs(netImpact);
+
+                           if (Math.abs(netImpact) < 0.01) return null; // Only show if there's actual debt movement between us
+
                            return (
                               <div key={exp._id} className="glass-card p-5 bg-white/[0.02] border border-white/5 group hover:bg-white/5 transition-all flex items-center justify-between">
                                  <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${IAmPayer ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'}`}>
-                                       {IAmPayer ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${impactType === 'lent' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'}`}>
+                                       {impactType === 'lent' ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
                                     </div>
                                     <div>
                                        <p className="text-white font-black text-sm tracking-tight mb-0.5">{exp.description}</p>
@@ -208,9 +222,9 @@ function FriendDetailModal({ isOpen, onClose, friend, user, onUpdate, balance = 
                                  </div>
                                   <div className="flex flex-col items-end gap-2">
                                      <div className="text-right">
-                                        <p className="text-white font-black font-mono text-lg italic">₹{exp.totalAmount.toLocaleString()}</p>
-                                        <p className={`text-[9px] font-black uppercase tracking-[0.1em] ${IAmPayer ? 'text-green-400' : 'text-red-400'}`}>
-                                           {IAmPayer ? 'Lent' : 'Borrowed'}
+                                        <p className="text-white font-black font-mono text-lg italic">₹{Math.round(displayAmount).toLocaleString()}</p>
+                                        <p className={`text-[9px] font-black uppercase tracking-[0.1em] ${impactType === 'lent' ? 'text-green-400' : 'text-red-400'}`}>
+                                           {impactType === 'lent' ? 'Lent' : 'Borrowed'}
                                         </p>
                                      </div>
                                      <div className="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">

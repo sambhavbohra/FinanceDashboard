@@ -13,7 +13,7 @@ import { useToast } from '../context/ToastContext';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const formatCurrency = (n) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Math.abs(n));
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 export default function Splits() {
   const { user, fetchData: globalFetchData, editGroup } = useFinance();
@@ -484,6 +484,8 @@ export default function Splits() {
                            const isOwner = isCreatorOfGroup(selectedGroup);
                            const isTestFriend = selectedGroup.members.find(m => m._id === split.user._id)?.isTest;
                            const canISettle = amIPayer || (isOwner && isTestFriend);
+                           const contributor = expense.payers.find(p => (p.user?._id || p.user).toString() === split.user._id.toString());
+                           const netOwed = Math.max(0, Math.round(split.amount - (contributor?.amount || 0)));
                            
                            return (
                               <div key={split.user._id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white/3 rounded-2xl md:rounded-[24px] px-4 md:px-5 py-4 border border-white/5 gap-4 hover:border-accent/10 transition-colors">
@@ -494,7 +496,7 @@ export default function Splits() {
                                     </span>
                                  </div>
                                  <div className="flex items-center justify-between sm:justify-end gap-5 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-                                    <span className={`font-black text-lg md:text-xl tracking-tight leading-none ${split.paid ? 'text-green-400' : 'text-white'}`}>₹{split.amount}</span>
+                                    <span className={`font-black text-lg md:text-xl tracking-tight leading-none ${split.paid ? 'text-green-400' : 'text-white'}`}>₹{netOwed}</span>
                                     {split.paid ? (
                                        <div className="flex items-center gap-2 text-green-400">
                                           <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">Settle Verified</span>

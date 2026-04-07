@@ -104,13 +104,14 @@ export default function Layout({ children }) {
                  <p className="text-[10px] text-muted font-black tracking-widest uppercase opacity-50">Identity Verified</p>
               </div>
            </div>
-        </div>
+         </div>
+         <div className="h-8 lg:hidden" />
      </>
   );
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] text-white selection:bg-accent selection:text-primary">
-      <aside className="fixed left-0 top-0 bottom-0 w-80 bg-black/60 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-8 z-50 overflow-hidden group">
+      <aside className="fixed left-0 top-0 bottom-0 w-80 bg-black/60 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-8 z-50 overflow-y-auto no-scrollbar group">
         <SidebarContent />
       </aside>
 
@@ -130,7 +131,7 @@ export default function Layout({ children }) {
                   animate={{ x: 0 }}
                   exit={{ x: '-100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-[#0C0C0C] border-r border-white/5 flex flex-col p-8 z-[101] lg:hidden shadow-2xl"
+                  className="fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-[#0C0C0C] border-r border-white/5 flex flex-col p-8 z-[101] lg:hidden shadow-2xl overflow-y-auto no-scrollbar"
                >
                   <SidebarContent showClose onClose={() => setIsSidebarOpen(false)} />
                </motion.aside>

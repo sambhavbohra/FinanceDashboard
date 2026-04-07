@@ -40,11 +40,11 @@ export default function Decisions() {
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">Consensus Hub</p>
            </div>
-           <h1 className="text-5xl font-black text-white tracking-tighter italic uppercase leading-none">
-             Democratic <span className="text-accent underline decoration-4 underline-offset-8">Decisions</span>
+           <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none">
+             Revised <span className="text-accent underline decoration-4 underline-offset-8">Decisions</span>
            </h1>
-           <p className="text-muted text-xs font-bold mt-6 max-w-xl leading-relaxed">
-             Review and approve changes to tracked splits. Every modification—whether an edit or deletion—requires unanimous consensus from all impacted members of your squad.
+           <p className="text-muted text-xs font-bold mt-6 leading-relaxed">
+             Review and approve communal modifications. Unanimous consensus required for all shared ledger updates.
            </p>
         </div>
       </header>

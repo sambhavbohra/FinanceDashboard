@@ -127,10 +127,7 @@ export default function BulkSplitModal({ isOpen, onClose, friends, currentUser, 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Squad Disperse — Multi-Split Engine">
-      <form onSubmit={handleDisperse} className="pt-2 flex flex-col max-h-[85vh]">
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar pb-6" style={{ maxHeight: 'calc(85vh - 120px)' }}>
-           
+      <form onSubmit={handleDisperse} className="pt-2 space-y-6">
            <div className="flex items-center gap-4 p-4 bg-accent/10 border border-accent/20 rounded-2xl">
               <Zap className="text-accent" size={24} />
               <p className="text-[11px] text-white/80 font-medium leading-relaxed">
@@ -280,10 +277,9 @@ export default function BulkSplitModal({ isOpen, onClose, friends, currentUser, 
                 <DatePicker selected={form.date} onChange={date => setForm(f => ({ ...f, date }))} maxDate={new Date()} />
              </div>
            </div>
-        </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-white/5 space-y-3 bg-card shrink-0">
+        <div className="sticky bottom-0 pt-4 border-t border-white/5 space-y-3 bg-card shrink-0 -mx-6 px-6 pb-2">
            {error && <div className="p-2.5 bg-red-500/10 text-red-500 text-[10px] font-bold rounded-xl border border-red-500/20">{error}</div>}
            
            {loading && (
@@ -296,7 +292,7 @@ export default function BulkSplitModal({ isOpen, onClose, friends, currentUser, 
            )}
 
            <button type="submit" disabled={loading || !form.description || !amountToDisperse || !isPaidMatched || !isSplitMatched}
-             className="w-full bg-accent text-primary font-black py-4 rounded-2xl hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 h-16 text-lg uppercase tracking-widest disabled:opacity-30 disabled:grayscale">
+             className="w-full bg-accent text-primary font-black py-4 rounded-2xl hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 h-16 text-lg uppercase tracking-widest disabled:opacity-30 disabled:grayscale active:scale-[0.98]">
              {loading ? 'Dispersing...' : 'Initiate Disperse'}
            </button>
         </div>

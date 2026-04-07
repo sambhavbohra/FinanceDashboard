@@ -50,14 +50,14 @@ export default function OverviewCards() {
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+    <div className="flex lg:grid lg:grid-cols-4 gap-4 overflow-x-auto no-scrollbar snap-x -mx-5 px-5 lg:mx-0 lg:px-0">
       {cards.map((card, idx) => (
         <motion.div
            key={card.title}
            initial={{ opacity: 0, scale: 0.95, y: 10 }}
            animate={{ opacity: 1, scale: 1, y: 0 }}
            transition={{ delay: idx * 0.1, duration: 0.4 }}
-           className="glass-card p-5 sm:p-7 flex flex-col justify-between group overflow-hidden relative shadow-lg shadow-black/20"
+           className="flex-shrink-0 w-[75vw] sm:w-[45vw] lg:w-auto snap-center glass-card p-6 sm:p-7 flex flex-col justify-between group overflow-hidden relative shadow-lg shadow-black/20"
         >
            <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-[0.03] transition-all rotate-12 scale-150">
               <card.icon size={120} weight="fill" />

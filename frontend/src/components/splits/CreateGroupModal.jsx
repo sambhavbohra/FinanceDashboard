@@ -61,87 +61,86 @@ export default function CreateGroupModal({ isOpen, onClose, onCreated, currentUs
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create Group Protocol">
-      <div className="pt-2 flex flex-col max-h-[85vh]">
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-8 custom-scrollbar pb-6" style={{ maxHeight: 'calc(85vh - 120px)' }}>
-          
+      <div className="flex flex-col h-full space-y-6">
           {/* Group Info Section */}
-          <div className="space-y-4">
-             <label className="text-[10px] text-muted uppercase tracking-widest font-black">Group Configuration</label>
-             <div className="flex gap-4">
-                <div className="relative">
+          <div className="space-y-3 pt-1">
+             <label className="text-[9px] text-muted uppercase tracking-[0.3em] font-black">Group Configuration</label>
+             <div className="flex gap-3">
+                <div className="relative shrink-0">
                    <button
                       type="button"
                       onClick={() => setEmoji(GROUP_EMOJIS[(GROUP_EMOJIS.indexOf(emoji) + 1) % GROUP_EMOJIS.length])}
-                      className="w-16 h-16 rounded-3xl bg-secondary border border-white/10 flex items-center justify-center text-3xl hover:border-accent/40 active:scale-95 transition-all shadow-inner"
+                      className="w-14 h-14 rounded-2xl bg-secondary border border-white/10 flex items-center justify-center text-2xl hover:border-accent/40 active:scale-95 transition-all shadow-inner"
                    >
                       {emoji}
                    </button>
-                   <div className="absolute -bottom-1 -right-1 bg-accent text-primary p-1 rounded-full shadow-lg">
-                      <Sparkles size={14} />
+                   <div className="absolute -bottom-1 -right-1 bg-accent text-primary p-0.5 rounded-full shadow-lg">
+                      <Sparkles size={12} />
                    </div>
                 </div>
                 <input
                   required
-                  placeholder="Group naming protocol..."
+                  placeholder="Group Name..."
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="flex-1 bg-secondary border border-white/10 rounded-2xl px-5 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent font-black tracking-tight"
+                  className="flex-1 bg-secondary border border-white/10 rounded-xl px-4 text-white placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent font-black tracking-tight text-sm outline-none"
                 />
              </div>
           </div>
 
           {/* Members Section */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-               <label className="text-[10px] text-muted uppercase tracking-widest font-black">Squad Selection</label>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center px-1">
+               <label className="text-[9px] text-muted uppercase tracking-[0.3em] font-black">Squad Selection</label>
                <button 
                  type="button"
                  onClick={() => setShowTestFriendForm(!showTestFriendForm)}
-                 className="text-[10px] text-accent font-black uppercase tracking-wider flex items-center gap-2 hover:bg-accent/10 px-3 py-1.5 rounded-xl transition-all"
+                 className="text-[9px] text-accent font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-accent/10 px-2 rounded-lg transition-all py-1"
                >
-                  <UserPlus size={14} />
-                  {showTestFriendForm ? 'Normal Friends' : 'Offline Partner'}
+                  <UserPlus size={12} />
+                  {showTestFriendForm ? 'Real Friends' : 'Ghost Partner'}
                </button>
             </div>
             
-            <div className="bg-white/3 p-5 rounded-3xl border border-white/5 space-y-4">
+            <div className="bg-white/3 p-4 rounded-2xl border border-white/5 space-y-4 shadow-inner">
                {!showTestFriendForm ? (
                  <UserSearch
                    onAdd={addMember}
                    excludeIds={[currentUserId, ...members.map(m => m._id)]}
-                   placeholder="Search friends for squad..."
+                   placeholder="Search friends..."
                  />
                ) : (
                  <div className="flex gap-2">
                     <input
-                      placeholder="Ghost partner name..."
+                      placeholder="Partner name..."
                       value={testFriendName}
                       onChange={e => setTestFriendName(e.target.value)}
-                      className="flex-1 bg-secondary border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 font-bold"
+                      className="flex-1 bg-secondary border border-white/10 rounded-xl py-2 px-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 font-bold"
                       onKeyPress={(e) => e.key === 'Enter' && createTestFriend()}
                     />
                     <button 
                       type="button"
                       onClick={createTestFriend}
                       disabled={!testFriendName.trim() || loading}
-                      className="bg-accent/10 border border-accent/20 text-accent px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-accent/20 transition-all disabled:opacity-30"
+                      className="bg-accent/10 border border-accent/20 text-accent px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/20 transition-all disabled:opacity-30"
                     >
-                      Init
+                      Add
                     </button>
                  </div>
                )}
 
                {members.length > 0 && (
-                 <div className="flex flex-wrap gap-2 pt-2 animate-in fade-in duration-500">
+                 <div className="flex flex-wrap gap-2 pt-1 animate-in fade-in duration-500">
                    {members.map(m => (
-                     <div key={m._id} className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-2xl pl-2 pr-3 py-1.5 transition-all hover:bg-accent/20">
-                       <div className="w-7 h-7 rounded-xl bg-accent text-primary flex items-center justify-center text-[10px] font-black uppercase">
-                         {m.picture ? <img src={m.picture} className="w-full h-full rounded-xl object-cover" alt="" /> : m.name?.[0]}
+                     <div key={m._id} className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl pl-2 pr-3 py-1.5 transition-all hover:bg-accent/20">
+                       <div className="w-6 h-6 rounded-lg bg-accent text-primary flex items-center justify-center text-[9px] font-black uppercase overflow-hidden">
+                         {m.picture ? <img src={m.picture} className="w-full h-full object-cover" alt="" /> : (m.name ? m.name[0] : '?')}
                        </div>
-                       <span className="text-[11px] text-white font-black uppercase truncate max-w-[100px]">{m.name.split(' ')[0]}</span>
+                       <span className="text-[10px] text-white font-black uppercase truncate max-w-[80px]">
+                         {m.name?.split(' ')[0] || 'Unnamed'}
+                       </span>
                        <button onClick={() => setMembers(prev => prev.filter(x => x._id !== m._id))} className="text-muted hover:text-red-400 p-0.5 transition-colors">
-                         <X size={14} strokeWidth={3} />
+                         <X size={12} strokeWidth={3} />
                        </button>
                      </div>
                    ))}
@@ -149,14 +148,13 @@ export default function CreateGroupModal({ isOpen, onClose, onCreated, currentUs
                )}
             </div>
           </div>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="pt-6 border-t border-white/5 bg-card shrink-0">
+        {/* Sticky Footer Actions */}
+        <div className="sticky bottom-0 pt-4 border-t border-white/5 shrink-0 bg-card -mx-6 px-6 pb-2">
            <button
              onClick={handleCreateGroup}
              disabled={loading || !name.trim()}
-             className="w-full bg-accent text-primary font-black py-5 rounded-3xl hover:bg-accent/90 transition-all shadow-2xl shadow-accent/20 active:scale-[0.98] disabled:opacity-30 disabled:grayscale h-16 flex items-center justify-center text-lg uppercase tracking-[0.2em]"
+             className="w-full bg-accent text-primary font-black py-4 rounded-2xl hover:bg-accent/90 transition-all shadow-2xl shadow-accent/20 active:scale-[0.98] disabled:opacity-30 disabled:grayscale h-16 flex items-center justify-center text-base uppercase tracking-[0.2em]"
            >
              {loading ? (
                 <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />

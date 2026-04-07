@@ -127,16 +127,16 @@ export default function Settings() {
 
   return (
     <div className="space-y-10 pb-24 md:pb-0 max-w-4xl mx-auto fintrack-settings overflow-visible">
-      <header className="flex items-center gap-6">
+      <header className="flex items-center gap-4 sm:gap-6 px-1">
         <button 
           onClick={() => navigate(-1)} 
-          className="w-14 h-14 bg-white/5 border border-white/10 rounded-[20px] flex items-center justify-center hover:bg-accent hover:text-primary transition-all text-muted active:scale-95 shrink-0 shadow-lg"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-white/5 border border-white/10 rounded-[18px] sm:rounded-[20px] flex items-center justify-center hover:bg-accent hover:text-primary transition-all text-muted active:scale-95 shrink-0 shadow-lg"
         >
-           <ArrowLeft size={24} strokeWidth={3} />
+           <ArrowLeft size={20} className="sm:w-6 sm:h-6" strokeWidth={3} />
         </button>
-        <div>
+        <div className="min-w-0">
           <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-black text-white tracking-tighter leading-none mb-1">
+            className="text-3xl sm:text-5xl font-black text-white tracking-tighter leading-tight mb-1 truncate">
             IDENTITY <span className="text-accent underline decoration-4 decoration-accent/30 underline-offset-4">& PRIVACY</span>
           </motion.h1>
           <p className="text-muted text-[10px] uppercase font-black tracking-[0.4em] flex items-center gap-2 opacity-60">
@@ -146,22 +146,22 @@ export default function Settings() {
       </header>
 
       {/* Profile Spotlight Overhaul */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-12 border-2 border-white/5 relative group overflow-hidden bg-gradient-to-br from-accent/5 via-transparent to-transparent shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)]">
-        <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 sm:p-12 border-2 border-white/5 relative group overflow-hidden bg-gradient-to-br from-accent/5 via-transparent to-transparent shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 relative z-10">
           <div className="relative group/avatar cursor-pointer">
-             <div className="w-32 h-32 rounded-[48px] bg-secondary border-4 border-white/10 flex items-center justify-center text-accent text-4xl font-black shadow-2xl relative overflow-hidden transition-all duration-500 group-hover/avatar:rotate-6 group-hover/avatar:scale-105 group-hover/avatar:border-accent">
+             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[36px] sm:rounded-[48px] bg-secondary border-4 border-white/10 flex items-center justify-center text-accent text-3xl sm:text-4xl font-black shadow-2xl relative overflow-hidden transition-all duration-500 group-hover/avatar:rotate-6 group-hover/avatar:scale-105 group-hover/avatar:border-accent">
                 {user?.picture ? <img src={user.picture} className="w-full h-full object-cover" alt="" /> : user?.name?.[0]}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
                    <Camera size={24} className="text-white" />
                 </div>
              </div>
-             <div className="absolute -bottom-3 -right-3 bg-accent p-3 rounded-[20px] shadow-2xl border-4 border-[#0C0C0C] animate-bounce-slow">
-                <Shield size={22} className="text-primary" strokeWidth={3} />
+             <div className="absolute -bottom-2 -right-2 sm:-bottom-3 sm:-right-3 bg-accent p-2 sm:p-3 rounded-lg sm:rounded-[20px] shadow-2xl border-4 border-[#0C0C0C] animate-bounce-slow">
+                <Shield size={16} className="text-primary sm:w-[22px]" strokeWidth={3} />
              </div>
           </div>
           
           <div className="text-center md:text-left flex-1 min-w-0">
-            <h3 className="text-white font-black text-5xl tracking-tighter leading-none mb-4 truncate">{user?.name}</h3>
+            <h3 className="text-white font-black text-3xl sm:text-5xl tracking-tighter leading-none mb-4 truncate">{user?.name}</h3>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                <div className="flex items-center gap-3 bg-accent text-primary px-5 py-3 rounded-[24px] text-xs font-black uppercase tracking-widest shadow-xl shadow-accent/20">
                   <User size={16} strokeWidth={3} />

@@ -156,193 +156,173 @@ export default function AddExpenseModal({ isOpen, onClose, group, currentUser, o
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`${initialExpense ? 'Edit Split' : 'Add Split'} — ${group.emoji} ${group.name}`}>
-      <form onSubmit={handleSubmit} className="pt-2 flex flex-col max-h-[85vh]">
-        
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar pb-6" style={{ maxHeight: 'calc(85vh - 120px)' }}>
-          <div className="space-y-4">
-            <div className="relative group">
-              <input
-                required
-                placeholder="What was this for?"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-secondary border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all pl-11 shadow-sm font-bold"
-              />
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
-                 <Info size={16} />
-              </div>
+      <form onSubmit={handleSubmit} className="flex flex-col h-full space-y-5">
+        <div className="space-y-4">
+          <div className="relative group">
+            <input
+              required
+              placeholder="What was this for?"
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className="w-full bg-secondary border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all pl-11 shadow-sm font-bold"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
+               <Info size={16} />
             </div>
+          </div>
 
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors font-bold text-sm">₹</span>
-              <input
-                required
-                type="number" min="0.01" step="0.01"
-                placeholder="Total Amount"
-                value={form.totalAmount}
-                onChange={e => {
-                   setForm(f => ({ ...f, totalAmount: e.target.value }));
-                   if (payers.length === 1) setPayers([{ user: payers[0].user, amount: parseFloat(e.target.value) || 0 }]);
-                }}
-                className="w-full bg-secondary border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all font-semibold shadow-sm text-lg"
-              />
-            </div>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors font-bold text-sm">₹</span>
+            <input
+              required
+              type="number" min="0.01" step="0.01"
+              placeholder="Total Amount"
+              value={form.totalAmount}
+              onChange={e => {
+                 setForm(f => ({ ...f, totalAmount: e.target.value }));
+                 if (payers.length === 1) setPayers([{ user: payers[0].user, amount: parseFloat(e.target.value) || 0 }]);
+              }}
+              className="w-full bg-secondary border border-white/10 rounded-xl py-3.5 pl-10 pr-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all font-semibold shadow-sm text-lg"
+            />
+          </div>
 
-            <div className="space-y-4 bg-white/3 rounded-3xl p-5 border border-white/5 shadow-inner">
-               <div className="flex justify-between items-center mb-1 px-1">
-                  <label className="text-[10px] text-muted uppercase tracking-widest font-black">Paid by</label>
-                  <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isPaidMatched ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400 animate-pulse'}`}>
-                     Total Paid: ₹{totalPaid.toFixed(2)}
-                  </div>
+          <div className="space-y-4 bg-white/3 rounded-3xl p-4 sm:p-5 border border-white/5 shadow-inner">
+             <div className="flex justify-between items-center mb-1 px-1">
+                <label className="text-[10px] text-muted uppercase tracking-widest font-black">Paid by</label>
+                <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isPaidMatched ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400 animate-pulse'}`}>
+                   ₹{totalPaid.toFixed(2)}
+                </div>
+             </div>
+             
+             <div className="flex overflow-x-auto no-scrollbar gap-2 mb-4 pb-2 px-1">
+                {members.map(m => {
+                   const isSelected = payers.some(p => p.user === m._id);
+                   return (
+                      <button
+                        key={m._id} type="button"
+                        onClick={() => togglePayer(m._id)}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border transition-all text-[10px] font-black uppercase whitespace-nowrap shrink-0 transition-transform active:scale-95 ${
+                           isSelected ? 'bg-accent text-primary border-accent shadow-lg shadow-accent/20' : 'bg-white/3 border-white/5 text-muted hover:text-white'
+                        }`}
+                      >
+                         {m.name?.split(' ')[0] || '...'}
+                         {isSelected ? <CheckCircle size={10} strokeWidth={3} /> : <Plus size={10} strokeWidth={3} />}
+                      </button>
+                   );
+                })}
+             </div>
+
+             <div className="space-y-3 mt-4">
+                <AnimatePresence>
+                {payers.map(p => {
+                   const member = members.find(m => m._id === p.user);
+                   return (
+                      <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} key={p.user} className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-accent text-[10px] font-black shrink-0 relative overflow-hidden">
+                            {member?.picture ? <img src={member.picture} className="w-full h-full object-cover rounded-lg" alt="" /> : (member?.name ? member.name[0] : '?')}
+                         </div>
+                         <div className="flex-1 text-[11px] text-white/70 font-black uppercase truncate">{member?.name || 'Unknown'}</div>
+                         <div className="relative w-28">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
+                            <input
+                              type="number" step="0.01"
+                              value={p.amount || ''}
+                              onChange={e => updatePayerAmount(p.user, e.target.value)}
+                              className="w-full bg-[#1c1c1e] border border-white/5 rounded-lg py-2 pl-7 pr-2 text-white text-xs focus:border-accent outline-none font-bold tracking-tight"
+                              placeholder="0"
+                            />
+                         </div>
+                      </motion.div>
+                   );
+                })}
+                </AnimatePresence>
+             </div>
+          </div>
+
+          <div className="space-y-3 bg-white/3 rounded-3xl p-4 sm:p-5 border border-white/5 overflow-hidden shadow-inner">
+             <div className="flex flex-col gap-3 mb-3">
+                <label className="text-[10px] text-muted uppercase tracking-widest font-black">Split Strategy</label>
+                <div className="flex bg-secondary p-1 rounded-xl gap-1">
+                   <button 
+                     type="button" 
+                     onClick={() => setForm(f => ({ ...f, splitType: 'equal' }))}
+                     className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${form.splitType === 'equal' ? 'bg-accent text-primary shadow-lg shadow-accent/20' : 'text-muted hover:text-white'}`}
+                   >
+                     Equal
+                   </button>
+                   <button 
+                     type="button" 
+                     onClick={() => setForm(f => ({ ...f, splitType: 'custom' }))}
+                     className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${form.splitType === 'custom' ? 'bg-accent text-primary shadow-lg shadow-accent/20' : 'text-muted hover:text-white'}`}
+                   >
+                     Custom
+                   </button>
+                </div>
+             </div>
+
+             {form.splitType === 'custom' ? (
+                <div className="space-y-3 animate-in fade-in duration-500">
+                   <div className="flex justify-between items-center mb-2 px-1">
+                      <p className="text-[9px] text-accent font-black uppercase tracking-widest">Weights</p>
+                      <span className={`text-[10px] font-black tracking-tight ${isSplitMatched ? 'text-green-400' : 'text-red-400 animate-pulse'}`}>
+                         ₹{totalCustomSplit.toFixed(2)}
+                      </span>
+                   </div>
+                   {members.map(m => (
+                      <div key={m._id} className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 text-[10px] font-black shrink-0 relative overflow-hidden">
+                            {m.picture ? <img src={m.picture} className="w-full h-full object-cover rounded-lg opacity-40" alt="" /> : (m.name ? m.name[0] : '?')}
+                         </div>
+                         <div className="flex-1 text-[11px] text-white/70 font-bold truncate">{m.name || 'Member'}</div>
+                         <div className="relative w-28">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
+                            <input
+                              type="number" step="0.01"
+                              value={customSplits[m._id] || ''}
+                              onChange={e => updateCustomSplit(m._id, e.target.value)}
+                              className="w-full bg-[#1c1c1e] border border-white/5 rounded-lg py-2 pl-7 pr-2 text-white text-xs focus:border-accent outline-none font-bold tracking-tight"
+                              placeholder="0"
+                            />
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             ) : (
+                <div className="text-center py-3 bg-white/3 rounded-2xl border border-white/5">
+                  <p className="text-[10px] text-muted font-bold tracking-tight">
+                     EQUAL SHARE: <span className="text-accent font-black text-xs">₹{(amountToSplit / (members.length || 1)).toFixed(2)}</span>
+                  </p>
+                </div>
+             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pb-2">
+             <div className="relative group">
+               <select
+                 value={form.category}
+                 onChange={e => setForm(f => ({ ...f, category: e.target.value, customCategory: '' }))}
+                 className="w-full bg-secondary border border-white/10 rounded-xl py-3.5 px-4 text-white focus:outline-none pl-11 appearance-none text-[11px] font-bold"
+               >
+                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+               </select>
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
+                  <Tag size={16} />
                </div>
-               
-               <div className="flex flex-wrap gap-2 mb-4">
-                  {members.map(m => {
-                     const isSelected = payers.some(p => p.user === m._id);
-                     return (
-                        <button
-                          key={m._id} type="button"
-                          onClick={() => togglePayer(m._id)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-[10px] font-black uppercase ${
-                             isSelected ? 'bg-accent/15 border-accent/40 text-accent' : 'bg-white/3 border-white/5 text-muted hover:text-white'
-                          }`}
-                        >
-                           {m.name?.split(' ')[0]}
-                           {isSelected ? <CheckCircle size={10} /> : <Plus size={10} />}
-                        </button>
-                     );
-                  })}
+               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none group-focus-within:text-accent transition-colors">
+                  <ChevronDown size={14} />
                </div>
+             </div>
 
-               <div className="space-y-3 mt-4">
-                  <AnimatePresence>
-                  {payers.map(p => {
-                     const member = members.find(m => m._id === p.user);
-                     return (
-                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} key={p.user} className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-accent text-[10px] font-black shrink-0 relative overflow-hidden">
-                              {member?.picture ? <img src={member.picture} className="w-full h-full object-cover rounded-lg" alt="" /> : member?.name?.[0]}
-                           </div>
-                           <div className="flex-1 text-[11px] text-white/70 font-black uppercase truncate">{member?.name}</div>
-                           <div className="relative w-28">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
-                              <input
-                                type="number" step="0.01"
-                                value={p.amount || ''}
-                                onChange={e => updatePayerAmount(p.user, e.target.value)}
-                                className="w-full bg-[#1c1c1e] border border-white/5 rounded-lg py-1.5 pl-7 pr-2 text-white text-xs focus:ring-1 focus:ring-accent/50 outline-none font-bold"
-                                placeholder="0"
-                              />
-                           </div>
-                        </motion.div>
-                     );
-                  })}
-                  </AnimatePresence>
-               </div>
-            </div>
-
-            {/* SPLIT TYPE SELECTOR */}
-            <div className="space-y-3 bg-white/3 rounded-3xl p-5 border border-white/5 overflow-hidden shadow-inner">
-               <div className="flex justify-between items-center mb-3">
-                  <label className="text-[10px] text-muted uppercase tracking-widest font-black">Split Strategy</label>
-                  <div className="flex bg-secondary p-1 rounded-xl gap-1">
-                     <button 
-                       type="button" 
-                       onClick={() => setForm(f => ({ ...f, splitType: 'equal' }))}
-                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${form.splitType === 'equal' ? 'bg-accent text-primary shadow-lg shadow-accent/20' : 'text-muted'}`}
-                     >
-                       Equal
-                     </button>
-                     <button 
-                       type="button" 
-                       onClick={() => setForm(f => ({ ...f, splitType: 'custom' }))}
-                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${form.splitType === 'custom' ? 'bg-accent text-primary shadow-lg shadow-accent/20' : 'text-muted'}`}
-                     >
-                       Unequal
-                     </button>
-                  </div>
-               </div>
-
-               {form.splitType === 'custom' ? (
-                  <div className="space-y-3 animate-in fade-in duration-300">
-                     <div className="flex justify-between items-center mb-2 px-1">
-                        <p className="text-[9px] text-accent/60 font-black uppercase italic">Custom Distribution</p>
-                        <span className={`text-[10px] font-black ${isSplitMatched ? 'text-green-400' : 'text-red-400 animate-pulse'}`}>
-                           Matched: ₹{totalCustomSplit.toFixed(2)}
-                        </span>
-                     </div>
-                     {members.map(m => (
-                        <div key={m._id} className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 text-[10px] font-black shrink-0 relative overflow-hidden">
-                              {m.picture ? <img src={m.picture} className="w-full h-full object-cover rounded-lg opacity-40" alt="" /> : m.name?.[0]}
-                           </div>
-                           <div className="flex-1 text-[11px] text-white/70 font-bold truncate">{m.name}</div>
-                           <div className="relative w-28">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
-                              <input
-                                type="number" step="0.01"
-                                value={customSplits[m._id] || ''}
-                                onChange={e => updateCustomSplit(m._id, e.target.value)}
-                                className="w-full bg-[#1c1c1e] border border-white/5 rounded-lg py-1.5 pl-7 pr-2 text-white text-xs focus:ring-1 focus:ring-accent/50 outline-none font-bold"
-                                placeholder="0"
-                              />
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               ) : (
-                  <div className="text-center py-3 bg-white/3 rounded-2xl border border-white/5">
-                    <p className="text-[10px] text-muted font-bold tracking-tight">
-                       Equally split: <span className="text-accent font-black">₹{(amountToSplit / (members.length || 1)).toFixed(2)}</span> each.
-                    </p>
-                  </div>
-               )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-               <div className="relative group">
-                 <select
-                   value={form.category}
-                   onChange={e => setForm(f => ({ ...f, category: e.target.value, customCategory: '' }))}
-                   className="w-full bg-secondary border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none pl-11 appearance-none text-[12px] font-bold"
-                 >
-                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                 </select>
-                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
-                    <Tag size={16} />
-                 </div>
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none group-focus-within:text-accent transition-colors">
-                    <ChevronDown size={14} />
-                 </div>
-               </div>
-
-               <DatePicker
-                 selected={form.date}
-                 onChange={date => setForm(f => ({ ...f, date }))}
-                 maxDate={new Date()}
-               />
-            </div>
-
-            {(form.category === 'Other' || !CATEGORIES.includes(form.category)) && (
-               <div className="relative group animate-in slide-in-from-top-2 duration-300">
-                  <input
-                    required
-                    placeholder="Detail (e.g. Laundry)"
-                    value={form.customCategory}
-                    onChange={e => setForm(f => ({ ...f, customCategory: e.target.value }))}
-                    className="w-full bg-secondary/60 border border-accent/20 rounded-xl py-2.5 px-4 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all pl-11 shadow-inner text-sm italic font-bold"
-                  />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-accent/60 group-focus-within:text-accent transition-colors">
-                     <Sparkles size={14} />
-                  </div>
-               </div>
-            )}
+             <DatePicker
+               selected={form.date}
+               onChange={date => setForm(f => ({ ...f, date }))}
+               maxDate={new Date()}
+             />
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="pt-4 border-t border-white/5 space-y-3 bg-card shrink-0">
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 pt-4 border-t border-white/5 space-y-3 bg-card shrink-0 -mx-6 px-6 pb-2">
           {error && (
              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold animate-pulse">
                 <AlertCircle size={14} />
@@ -351,7 +331,7 @@ export default function AddExpenseModal({ isOpen, onClose, group, currentUser, o
           )}
 
           <button type="submit" disabled={loading || !form.description || !form.totalAmount || !isPaidMatched || !isSplitMatched}
-            className="w-full bg-accent text-primary font-black py-4 rounded-2xl hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 h-16 text-lg uppercase tracking-widest disabled:opacity-30 disabled:grayscale">
+            className="w-full bg-accent text-primary font-black py-4 rounded-2xl hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 h-16 text-lg uppercase tracking-widest disabled:opacity-30 disabled:grayscale mb-1 active:scale-[0.98]">
             {loading ? (
                <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
             ) : 'Save Split'}

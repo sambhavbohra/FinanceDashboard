@@ -7,6 +7,7 @@ import Analytics from './pages/Analytics';
 import Goals from './pages/Goals';
 import Insights from './pages/Insights';
 import Transactions from './pages/Transactions';
+import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
 import Splits from './pages/Splits';
 import Friends from './pages/Friends';
@@ -46,7 +47,7 @@ const AppContent = () => (
       <Route path="/complete-profile" element={<CompleteProfile />} />
 
       <Route path="/" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
-      <Route path="/transactions" element={<PrivateRoute><Layout><Transactions /></Layout></PrivateRoute>} />
+      <Route path="/transactions" element={<PrivateRoute><Layout><Wallet /></Layout></PrivateRoute>} />
       <Route path="/analytics" element={<PrivateRoute><Layout><Analytics /></Layout></PrivateRoute>} />
       <Route path="/goals" element={<PrivateRoute><Layout><Goals /></Layout></PrivateRoute>} />
       <Route path="/insights" element={<PrivateRoute><Layout><Insights /></Layout></PrivateRoute>} />

@@ -5,6 +5,8 @@ import { Plus, Users, ArrowLeft, FileText, CheckCircle, ChevronRight, Inbox, Cop
 import axios from 'axios';
 import CreateGroupModal from '../components/splits/CreateGroupModal';
 import AddExpenseModal from '../components/splits/AddExpenseModal';
+import BulkSplitModal from '../components/splits/BulkSplitModal';
+import UserSearch from '../components/splits/UserSearch';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 
@@ -23,6 +25,8 @@ export default function Splits() {
   const [expenses, setExpenses] = useState([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showBulkSplit, setShowBulkSplit] = useState(false);
+  const [bulkFriends, setBulkFriends] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showManagement, setShowManagement] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -190,31 +194,61 @@ export default function Splits() {
       <header className="flex justify-between items-center">
         <div className="flex-1">
           <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black text-white mb-1 tracking-tighter">
+            className="text-4xl font-black text-white mb-1 tracking-tighter flex items-center gap-4">
             {selectedGroup ? (
-              <button onClick={() => { setSelectedGroup(null); setShowManagement(false); }} className="flex items-center gap-3 hover:text-accent transition-all group">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-accent/10 transition-all">
-                  <ArrowLeft size={24} strokeWidth={3} />
+              <div className="flex items-center gap-3">
+                <button onClick={() => { setSelectedGroup(null); setShowManagement(false); }} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-accent/10 transition-all text-white hover:text-accent">
+                   <ArrowLeft size={24} strokeWidth={3} />
+                </button>
+                <div className="flex items-center gap-2">
+                   <span className="text-3xl">{selectedGroup.emoji}</span>
+                   <span className="truncate max-w-[150px] sm:max-w-none">{selectedGroup.name}</span>
                 </div>
-                {selectedGroup.emoji} {selectedGroup.name}
-              </button>
+                {isCreatorOfGroup(selectedGroup) && (
+                  <button 
+                    onClick={() => setShowManagement(!showManagement)}
+                    className={`p-3 rounded-xl transition-all border ml-2 ${showManagement ? 'bg-accent text-primary border-accent' : 'bg-white/5 border-white/10 text-white hover:border-white/20'}`}
+                  >
+                     <Settings size={16} />
+                  </button>
+                )}
+              </div>
             ) : 'Group Splits'}
           </motion.h1>
           <p className="text-muted text-[10px] font-black uppercase tracking-[0.2em]">{selectedGroup ? `${selectedGroup.members?.length} active participants` : 'Smart shared finances'}</p>
         </div>
 
-        <div className="flex items-center gap-3">
-           {selectedGroup && isCreatorOfGroup(selectedGroup) && (
-              <button 
-                onClick={() => setShowManagement(!showManagement)}
-                className={`p-3.5 rounded-2xl transition-all border ${showManagement ? 'bg-accent text-primary border-accent' : 'bg-white/5 border-white/10 text-white hover:border-white/20'}`}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+           <div className="flex-1 sm:w-80">
+              <UserSearch 
+                 multi={!selectedGroup}
+                 onAdd={async (friendOrArray) => {
+                    if (Array.isArray(friendOrArray)) {
+                       setBulkFriends(friendOrArray);
+                       return;
+                    }
+                    try {
+                       const res = await axios.post(`${API_URL}/groups/private/${friendOrArray._id}`);
+                       openGroup(res.data);
+                    } catch (e) { console.error(e); }
+                 }}
+                 placeholder="Search squad or quick split..."
+              />
+           </div>
+           
+           {bulkFriends.length > 1 && !selectedGroup && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setShowBulkSplit(true)}
+                className="bg-green-400 text-primary px-6 py-4 rounded-2xl font-black hover:bg-green-300 transition-all shadow-xl shadow-green-400/20 flex items-center gap-2 uppercase text-[10px] tracking-widest h-14"
               >
-                 <Settings size={20} />
-              </button>
+                 Fast Disperse
+              </motion.button>
            )}
+
            <motion.button
              onClick={() => selectedGroup ? setShowAddExpense(true) : setShowCreateGroup(true)}
-             className="bg-accent text-primary px-6 py-4 rounded-2xl font-black hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 flex items-center gap-2 uppercase text-xs tracking-widest h-14"
+             className="bg-accent text-primary px-6 py-4 rounded-2xl font-black hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 flex items-center gap-2 uppercase text-xs tracking-widest h-14 shrink-0"
            >
              <Plus size={22} strokeWidth={4} />
              <span className="hidden sm:inline">{selectedGroup ? 'Add Split' : 'New Group'}</span>
@@ -447,15 +481,19 @@ export default function Splits() {
         currentUserId={user?._id}
         onCreated={(group) => setGroups(prev => [group, ...prev])}
       />
-      {showAddExpense && selectedGroup && (
-        <AddExpenseModal
-          isOpen={showAddExpense}
-          onClose={() => { setShowAddExpense(false); setEditingExpense(null); }}
-          group={selectedGroup}
-          currentUser={user}
-          initialExpense={editingExpense}
-          onAdded={() => fetchGroupExpenses(selectedGroup._id)}
-        />
+      {showBulkSplit && (
+         <BulkSplitModal 
+            isOpen={showBulkSplit}
+            onClose={() => { setShowBulkSplit(false); setBulkFriends([]); }}
+            friends={bulkFriends}
+            currentUser={user}
+            onSuccess={() => {
+               addToast("Expense dispersed successfully among squad", "success");
+               fetchBalances();
+               fetchGroups();
+               globalFetchData();
+            }}
+         />
       )}
     </div>
   );

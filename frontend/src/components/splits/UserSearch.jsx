@@ -4,10 +4,11 @@ import { Search, X, UserPlus, Check, Clock, UserCheck } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-export default function UserSearch({ onAdd, excludeIds = [], placeholder = 'Search friends by name or username...' }) {
+export default function UserSearch({ onAdd, excludeIds = [], placeholder = 'Search friends...', multi = false }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]); // Only for multi-mode
   const debounceRef = useRef(null);
 
   useEffect(() => {
@@ -18,61 +19,83 @@ export default function UserSearch({ onAdd, excludeIds = [], placeholder = 'Sear
       try {
         const res = await axios.get(`${API_URL}/users/search?q=${encodeURIComponent(query)}`);
         
-        // Enhance results with friendship status
         const usersWithStatus = await Promise.all(res.data.map(async (u) => {
           const statusRes = await axios.get(`${API_URL}/friends/status/${u._id}`);
           return { ...u, friendship: statusRes.data };
         }));
 
-        setResults(usersWithStatus.filter(u => !excludeIds.includes(u._id)));
+        setResults(usersWithStatus.filter(u => 
+           !excludeIds.includes(u._id) && 
+           !selectedUsers.some(s => s._id === u._id)
+        ));
       } catch (e) { setResults([]); }
       setLoading(false);
     }, 350);
-  }, [query]);
+  }, [query, selectedUsers]);
 
   const handleSendRequest = async (userId, e) => {
     e.stopPropagation();
     try {
       await axios.post(`${API_URL}/friends/request/${userId}`);
-      // Refresh results to show accepted status (since we have auto-accept)
       setResults(prev => prev.map(u => u._id === userId ? { ...u, friendship: { status: 'accepted' } } : u));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleAdd = (user) => {
-    if (user.friendship?.status !== 'accepted') {
-      // If not friend, maybe handle "Test Friend" or just block
-      return;
+    if (user.friendship?.status !== 'accepted') return;
+    
+    if (multi) {
+       const newSelection = [...selectedUsers, user];
+       setSelectedUsers(newSelection);
+       onAdd(newSelection);
+       setQuery('');
+       setResults([]);
+    } else {
+       onAdd(user);
+       setQuery('');
+       setResults([]);
     }
-    onAdd(user);
-    setQuery('');
-    setResults([]);
+  };
+
+  const removeUser = (id) => {
+     const newSelection = selectedUsers.filter(u => u._id !== id);
+     setSelectedUsers(newSelection);
+     onAdd(newSelection);
   };
 
   return (
     <div className="relative">
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="w-full bg-secondary border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
-        />
-        {query && (
-          <button onClick={() => { setQuery(''); setResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white">
-            <X size={14} />
-          </button>
-        )}
+      <div className="space-y-2">
+         {multi && selectedUsers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2 p-2 bg-black/20 rounded-xl border border-white/5">
+               {selectedUsers.map(u => (
+                  <div key={u._id} className="flex items-center gap-1.5 bg-accent text-primary px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                     {u.name.split(' ')[0]}
+                     <button onClick={() => removeUser(u._id)}><X size={10} strokeWidth={4} /></button>
+                  </div>
+               ))}
+            </div>
+         )}
+         <div className="relative">
+           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+           <input
+             value={query}
+             onChange={e => setQuery(e.target.value)}
+             placeholder={selectedUsers.length > 0 ? "Add another friend..." : placeholder}
+             className="w-full bg-secondary border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
+           />
+           {query && (
+             <button onClick={() => { setQuery(''); setResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white">
+               <X size={14} />
+             </button>
+           )}
+         </div>
       </div>
 
       {(results.length > 0 || loading) && (
         <div className="absolute top-full mt-2 left-0 right-0 bg-card border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
           {loading && <div className="px-4 py-3 text-muted text-sm items-center flex gap-2">
-            <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" /> 
-            Searching...
+            <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" /> Searching...
           </div>}
           {results.map(user => (
             <div
@@ -83,44 +106,18 @@ export default function UserSearch({ onAdd, excludeIds = [], placeholder = 'Sear
               onClick={() => user.friendship?.status === 'accepted' && handleAdd(user)}
             >
               <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold text-sm flex-shrink-0">
-                {user.picture
-                  ? <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full" />
-                  : user.name?.[0]?.toUpperCase()}
+                {user.picture ? <img src={user.picture} alt="" className="w-8 h-8 rounded-full" /> : user.name?.[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-medium truncate">{user.name}</p>
-                {user.username && <p className="text-muted text-xs truncate">@{user.username}</p>}
               </div>
-
               {user.friendship?.status === 'accepted' ? (
-                <div className="flex items-center gap-1.5 text-accent text-xs font-medium bg-accent/10 px-2 py-1 rounded-full">
-                  <UserCheck size={12} />
-                  Friend
-                </div>
-              ) : user.friendship?.status === 'pending' ? (
-                <div className="flex items-center gap-1.5 text-muted text-xs font-medium bg-white/5 px-2 py-1 rounded-full">
-                  <Clock size={12} />
-                  Pending
-                </div>
+                <div className="text-accent bg-accent/10 px-2 py-1 rounded-full"><UserCheck size={12} /></div>
               ) : (
-                <button 
-                  onClick={(e) => handleSendRequest(user._id, e)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-accent hover:bg-accent/10 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <UserPlus size={14} />
-                  Add Friend
-                </button>
+                <button onClick={(e) => handleSendRequest(user._id, e)} className="text-accent text-xs font-bold uppercase tracking-widest">+ Add</button>
               )}
             </div>
           ))}
-          {!loading && query.length >= 2 && results.length === 0 && (
-             <div className="px-4 py-6 text-center">
-                <p className="text-muted text-sm">No users found</p>
-                <button className="text-accent text-xs mt-2 font-medium hover:underline">
-                  Invite them to FinTrack
-                </button>
-             </div>
-          )}
         </div>
       )}
     </div>

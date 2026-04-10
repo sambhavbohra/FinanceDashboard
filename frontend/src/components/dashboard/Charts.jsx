@@ -78,7 +78,7 @@ export function SpendingPieChart() {
   return <Doughnut data={chartData} options={options} />;
 }
 
-export function CashflowLineChart() {
+export function CashflowLineChart({ onClick }) {
   const { transactions } = useFinance();
 
   // Get last 6 months names
@@ -180,5 +180,16 @@ export function CashflowLineChart() {
     interaction: { mode: 'nearest', axis: 'x', intersect: false }
   };
 
-  return <Line data={chartData} options={options} />;
+  return <Line 
+    data={chartData} 
+    options={{
+      ...options,
+      onClick: (event, elements) => {
+        if (elements.length > 0 && onClick) {
+          const index = elements[0].index;
+          onClick(monthIndices[index]);
+        }
+      }
+    }} 
+  />;
 }

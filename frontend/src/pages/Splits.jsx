@@ -479,7 +479,11 @@ export default function Splits() {
                      </div>
 
                      <div className="space-y-3">
-                        {expense.splits?.filter(s => !expense.payers.some(p => p.user._id === s.user._id && p.amount >= s.amount)).map(split => {
+                        {expense.splits?.filter(s => {
+                           const contributor = expense.payers.find(p => (p.user?._id || p.user).toString() === (s.user?._id || s.user).toString());
+                           const netOwed = Math.max(0, Math.round(s.amount - (contributor?.amount || 0)));
+                           return netOwed > 0;
+                        }).map(split => {
                            const amIPayer = expense.payers.some(p => p.user?._id?.toString() === user?._id);
                            const isOwner = isCreatorOfGroup(selectedGroup);
                            const isTestFriend = selectedGroup.members.find(m => m._id === split.user._id)?.isTest;

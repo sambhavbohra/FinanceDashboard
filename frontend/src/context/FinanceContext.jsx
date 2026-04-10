@@ -215,19 +215,34 @@ export const FinanceProvider = ({ children }) => {
   };
 
   // Derived state
-  const totalIncome = data.transactions
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const currentMonthTransactions = data.transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const totalIncome = currentMonthTransactions
     .filter(t => t.type === 'income')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const totalExpenses = data.transactions
+  const totalExpenses = currentMonthTransactions
     .filter(t => t.type === 'expense')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const balance = totalIncome - totalExpenses;
+  // Balance remains all-time
+  const allTimeIncome = data.transactions
+    .filter(t => t.type === 'income')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+  const allTimeExpenses = data.transactions
+    .filter(t => t.type === 'expense')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+  const balance = allTimeIncome - allTimeExpenses;
   
-  // Health Score Calculation
+  // Health Score Calculation based on current month performance
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
-  const healthScore = totalIncome > 0 ? Math.min(100, Math.max(0, Math.round(50 + (savingsRate * 1.5)))) : null;
+  const healthScore = totalIncome > 0 ? Math.min(100, Math.max(0, Math.round(50 + (savingsRate * 1.5)))) : (data.transactions.length > 0 ? 100 : 0);
 
   return (
     <FinanceContext.Provider value={{

@@ -10,7 +10,7 @@ router.use(authMiddleware);
 // --- Transactions ---
 router.get('/transactions', async (req, res) => {
   try {
-    const transactions = await Transaction.find({ user: req.user.userId }).sort({ date: -1 });
+    const transactions = await Transaction.find({ user: req.user.userId, amount: { $ne: 0 } }).sort({ date: -1 });
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

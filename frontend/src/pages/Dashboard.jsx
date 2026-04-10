@@ -5,7 +5,7 @@ import TransactionList from '../components/dashboard/TransactionList';
 import { CashflowLineChart } from '../components/dashboard/Charts';
 import { motion, AnimatePresence } from 'framer-motion';
 import AddTransactionModal from '../components/dashboard/AddTransactionModal';
-import { Plus, Inbox, Gavel, ArrowRight } from 'lucide-react';
+import { Plus, Inbox, Gavel, ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useEffect } from 'react';
@@ -40,6 +40,29 @@ export default function Dashboard() {
 
   const score = healthScore;
   const hasData = transactions.length > 0;
+  const [selectedMonth, setSelectedMonth] = useState(null);
+
+  const getMonthlyBreakdown = (monthInfo) => {
+    if (!monthInfo) return null;
+    const monthTx = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === monthInfo.month && d.getFullYear() === monthInfo.year;
+    });
+
+    const income = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const dateObj = new Date(monthInfo.year, monthInfo.month);
+    
+    return {
+      monthName: dateObj.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+      income,
+      expense,
+      net: income - expense,
+      count: monthTx.length
+    };
+  };
+
+  const breakdown = getMonthlyBreakdown(selectedMonth);
 
   return (
     <div className="space-y-8 pb-20 md:pb-0">
@@ -99,7 +122,7 @@ export default function Dashboard() {
 
       {!hasData ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+  initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-24 flex flex-col items-center justify-center text-center border-dashed border-white/10 opacity-60 bg-white/2"
         >
@@ -117,18 +140,67 @@ export default function Dashboard() {
           </button>
         </motion.div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[400px]">
-          <div className="lg:col-span-2 glass-card p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-white">Monthly Cashflow</h3>
-              <div className="flex space-x-4 text-sm">
-                <span className="flex items-center text-muted"><span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 inline-block"></span>Income</span>
-                <span className="flex items-center text-muted"><span className="w-2 h-2 rounded-full bg-red-400 mr-2 inline-block"></span>Expenses</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="glass-card p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tighter">Monthly Cashflow</h3>
+                  <p className="text-[9px] text-muted font-black uppercase tracking-widest mt-1">interactive visual analytics</p>
+                </div>
+                <div className="flex space-x-4 text-[10px] font-black uppercase tracking-widest">
+                  <span className="flex items-center text-muted"><span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 inline-block"></span>Inflow</span>
+                  <span className="flex items-center text-muted"><span className="w-2 h-2 rounded-full bg-red-400 mr-2 inline-block"></span>Outflow</span>
+                </div>
+              </div>
+              <div className="h-[300px]">
+                <CashflowLineChart onClick={(month) => setSelectedMonth(month)} />
               </div>
             </div>
-            <div className="h-[300px]">
-              <CashflowLineChart />
-            </div>
+
+            <AnimatePresence mode="wait">
+              {breakdown ? (
+                <motion.div
+                  key={breakdown.monthName}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="glass-card p-6 bg-accent/[0.02] border-accent/10 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Sparkles className="text-accent" size={40} />
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                      <h4 className="text-white font-black text-xl tracking-tighter uppercase">{breakdown.monthName} Analysis</h4>
+                      <p className="text-[9px] text-muted font-black uppercase tracking-widest mt-1">Aggregated Capital Movements ({breakdown.count} entries)</p>
+                    </div>
+                    <button onClick={() => setSelectedMonth(null)} className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-white transition-colors">Close Insight</button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
+                      <p className="text-[9px] text-muted font-black uppercase tracking-widest mb-1">Total Inflow</p>
+                      <p className="text-xl font-black text-emerald-400 tracking-tight">₹{breakdown.income.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
+                      <p className="text-[9px] text-muted font-black uppercase tracking-widest mb-1">Total Outflow</p>
+                      <p className="text-xl font-black text-red-400 tracking-tight">₹{breakdown.expense.toLocaleString()}</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border shadow-inner ${breakdown.net >= 0 ? 'bg-emerald-400/10 border-emerald-400/20' : 'bg-red-400/10 border-red-400/20'}`}>
+                      <p className="text-[9px] text-muted font-black uppercase tracking-widest mb-1">Net Reserve Delta</p>
+                      <p className={`text-xl font-black tracking-tight ${breakdown.net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {breakdown.net >= 0 ? '+' : ''}₹{breakdown.net.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="glass-card p-10 flex flex-col items-center justify-center text-center opacity-40 border-dashed border-white/10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted">Select a data node on the graph to unlock monthly reserves breakdown</p>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
           <div className="min-h-[400px]">
             <TransactionList limit={6} onAdd={() => setShowModal(true)} />

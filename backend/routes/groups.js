@@ -305,39 +305,47 @@ router.patch('/:groupId/expenses/:expenseId/settle', auth, async (req, res) => {
        return res.status(403).json({ message: 'Only the receiver or group owner can settle splits' });
     }
 
-    const split = expense.splits.find(s => s.user.toString() === userId);
+    const split = expense.splits.find(s => (s.user?._id || s.user).toString() === userId.toString());
     if (split && !split.paid) {
-       split.paid = true;
-       await expense.save();
+       const contributor = expense.payers.find(p => (p.user?._id || p.user).toString() === userId.toString());
+       const netOwed = Math.max(0, split.amount - (contributor?.amount || 0));
 
-        const receiver = await User.findById(userId);
-        const sender = await User.findById(req.user.userId);
+       if (netOwed > 0) {
+          split.paid = true;
+          await expense.save();
 
-        const incomeTx = new Transaction({
-           user: req.user.userId,
-           name: `Split - ${receiver ? receiver.name.split(' ')[0] : 'Friend'}`,
-           amount: split.amount,
-           type: 'income',
-           category: 'Split',
-           isSplit: true,
-           splitId: expense._id,
-           date: new Date()
-        });
-        await incomeTx.save();
+          const personWhoOwed = await User.findById(userId);
+          const personReceiving = await User.findById(req.user.userId);
 
-        if (receiver && !receiver.isTest) {
-           const repaymentTx = new Transaction({
-              user: userId,
-              name: `Split - ${sender ? sender.name.split(' ')[0] : 'Friend'}`,
-              amount: split.amount,
-              type: 'expense',
-              category: 'Split',
-              isSplit: true,
-              splitId: expense._id,
-              date: new Date()
-           });
-           await repaymentTx.save();
-        }
+          const incomeTx = new Transaction({
+             user: req.user.userId,
+             name: `Split - ${personWhoOwed ? personWhoOwed.name.split(' ')[0] : 'Friend'}`,
+             amount: netOwed,
+             type: 'income',
+             category: 'Split',
+             isSplit: true,
+             splitId: expense._id,
+             date: new Date()
+          });
+          await incomeTx.save();
+
+          if (personWhoOwed && !personWhoOwed.isTest) {
+             const repaymentTx = new Transaction({
+                user: userId,
+                name: `Split - ${personReceiving ? personReceiving.name.split(' ')[0] : 'Friend'}`,
+                amount: netOwed,
+                type: 'expense',
+                category: 'Split',
+                isSplit: true,
+                splitId: expense._id,
+                date: new Date()
+             });
+             await repaymentTx.save();
+          }
+       } else {
+          split.paid = true;
+          await expense.save();
+       }
     }
     
     const populated = await GroupExpense.findById(expense._id).populate('payers.user splits.user');
@@ -374,18 +382,32 @@ router.post('/settle-with/:otherUserId', auth, async (req, res) => {
       for (const exp of expensesMePayer) {
          const split = exp.splits.find(s => s.user.toString() === otherId);
          if (split && !split.paid) {
-            split.paid = true;
-            amountOtherOwesMe += split.amount;
-            await exp.save();
+            const payerDetails = exp.payers.find(p => p.user.toString() === otherId);
+            const netOwed = Math.max(0, split.amount - (payerDetails?.amount || 0));
+            if (netOwed > 0) {
+               split.paid = true;
+               amountOtherOwesMe += netOwed;
+               await exp.save();
+            } else {
+               split.paid = true;
+               await exp.save();
+            }
          }
       }
 
       for (const exp of expensesOtherPayer) {
          const split = exp.splits.find(s => s.user.toString() === myId);
          if (split && !split.paid) {
-            split.paid = true;
-            amountIOweOther += split.amount;
-            await exp.save();
+            const payerDetails = exp.payers.find(p => p.user.toString() === myId);
+            const netOwed = Math.max(0, split.amount - (payerDetails?.amount || 0));
+            if (netOwed > 0) {
+               split.paid = true;
+               amountIOweOther += netOwed;
+               await exp.save();
+            } else {
+               split.paid = true;
+               await exp.save();
+            }
          }
       }
 

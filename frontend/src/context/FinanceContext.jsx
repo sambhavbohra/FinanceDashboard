@@ -53,18 +53,18 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const login = async (googleToken) => {
-    console.log("Attempting Google Login to:", `${API_URL}/auth/google`);
     try {
       const res = await axios.post(`${API_URL}/auth/google`, { token: googleToken });
-      console.log("Login success, received token");
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
       fetchData();
+      return { success: true };
     } catch (error) {
       console.error("Google Login Network Error:", error);
       if (error.response) {
         console.error("Server Responded With:", error.response.status, error.response.data);
       }
+      return { success: false, message: error.response?.data?.message || 'Google sign-in failed' };
     }
   };
 
@@ -100,11 +100,11 @@ export const FinanceProvider = ({ children }) => {
         axios.get(`${API_URL}/data/transactions`),
         axios.get(`${API_URL}/data/goals`)
       ]);
-      setData({
-        ...data,
+      setData(prev => ({
+        ...prev,
         transactions: txRes.data,
         goals: goalsRes.data
-      });
+      }));
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {

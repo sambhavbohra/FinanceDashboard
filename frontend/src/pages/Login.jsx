@@ -144,8 +144,9 @@ export default function Login() {
         <div className="flex justify-center mb-6">
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
-              await login(credentialResponse.credential);
-              navigate('/', { replace: true });
+              const res = await login(credentialResponse.credential);
+              if (res.success) navigate('/', { replace: true });
+              else setError(res.message || 'Google sign-in failed');
             }}
             onError={() => { console.error('Login Failed'); setError('Google Sign-in failed'); }}
             theme="filled_black"

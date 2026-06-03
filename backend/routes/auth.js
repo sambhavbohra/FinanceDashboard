@@ -11,16 +11,16 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 router.post('/google', async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    
+
     const { sub: googleId, email, name, picture } = ticket.getPayload();
 
     let user = await User.findOne({ googleId });
-    
+
     if (!user) {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -40,7 +40,8 @@ router.post('/google', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({ token: jwtToken, user });
+    const { password, otp, otpExpires, ...safeUser } = user.toObject();
+    res.json({ token: jwtToken, user: safeUser });
   } catch (error) {
     console.error('Auth error:', error);
     res.status(401).json({ message: 'Invalid token' });
@@ -51,6 +52,9 @@ router.post('/google', async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name, username } = req.body;
+    if (!email || !password || !name) return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
 
@@ -87,6 +91,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+
     const user = await User.findOne({ email });
     if (!user || !user.password) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -101,13 +107,15 @@ router.post('/login', async (req, res) => {
 
     res.json({ token: jwtToken, user: { _id: user._id, email: user.email, name: user.name } });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 router.get('/me', require('../middleware/authMiddleware'), async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId).select('-password -otp -otpExpires');
+    if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

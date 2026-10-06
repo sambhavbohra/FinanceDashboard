@@ -13,3 +13,8 @@
 .glass-card {
   @apply bg-card border border-white/5 shadow-xl rounded-2xl backdrop-blur-md;
 }
+
+/* Hidden per Google's rules; attribution text is shown on the phone OTP forms instead */
+.grecaptcha-badge {
+  visibility: hidden;
+}

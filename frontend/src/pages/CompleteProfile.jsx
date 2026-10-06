@@ -13,6 +13,14 @@ const PhoneInput = PhoneInputPkg.default || PhoneInputPkg;
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+export const RecaptchaNotice = () => (
+  <p className="text-[10px] text-white/20 text-center mt-6">
+    Protected by reCAPTCHA. Google{' '}
+    <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">Privacy Policy</a> and{' '}
+    <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">Terms of Service</a> apply.
+  </p>
+);
+
 export default function CompleteProfile() {
   const { user, setUser } = useFinance();
   const navigate = useNavigate();
@@ -182,6 +190,7 @@ export default function CompleteProfile() {
              </div>
           )}
         </form>
+        <RecaptchaNotice />
       </motion.div>
 
       <div id="recaptcha-container"></div>

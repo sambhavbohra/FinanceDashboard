@@ -7,6 +7,7 @@ import axios from 'axios';
 import PhoneInputPkg from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { auth } from '../firebase';
+import { RecaptchaNotice } from './CompleteProfile';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 const PhoneInput = PhoneInputPkg.default || PhoneInputPkg;
@@ -315,6 +316,7 @@ export default function Settings() {
       </div>
 
       <div id="recaptcha-container"></div>
+      <RecaptchaNotice />
 
       <style>{`
          .fintrack-phone-container .phone-container { width: 100% !important; z-index: 10000; }
